@@ -1,8 +1,13 @@
-import java
-from Method m, string sql
-where
-  m.getName() = "executeQuery" and
-  sql = m.getAnArgument().toString() and
-  sql.toLowerCase().matches("%select%from%")
-select m, "Potential SQL Injection vulnerability detected."
+/**
+ * @name Insecure Use of eval
+ * @description Detects the use of insecure eval calls.
+ * @kind problem
+ * @problem.severity error
+ * @tags security
+ */
 
+import java
+
+from MethodCall call
+where call.getTarget().getName() = "eval"
+select call, "Avoid using 'eval' due to security risks."
