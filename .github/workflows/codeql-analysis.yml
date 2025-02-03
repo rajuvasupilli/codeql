@@ -75,7 +75,8 @@ jobs:
           pwd
           ls -l
           echo "Searching for SARIF files..."
-          sarif_files=$(find /home/runner/_work/ep-sred/results -iname '*.sarif')
+          #sarif_files=$(find /home/runner/_work/ep-sred/results -iname '*.sarif')
+          sarif_files=$(find /home/runner/work/codeql/results -iname '*.sarif')          
           if [[ -z "$sarif_files" ]]; then
             echo "❌ No SARIF files found. CodeQL analysis may have failed."
             exit 1
