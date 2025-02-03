@@ -15,8 +15,11 @@ jobs:
   codeql:
     name: Run CodeQL Analysis
     permissions: write-all
-    #runs-on: aks-arc
-    runs-on: [ubuntu-latest]
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        language: [java, javascript]  # Analyze both Java and JavaScript
 
     steps:
       - name: Checkout repository
@@ -32,13 +35,15 @@ jobs:
           ls -l codeql-queries || echo "'codeql-queries' not found"
           find . -name "*.java" -o -name "*.js"
 
-      - name: Install Node.js
+      - name: Install Node.js (for JavaScript)
+        if: matrix.language == 'javascript'
         run: |
           curl -sL https://deb.nodesource.com/setup_20.x | sudo -E bash -
           sudo apt-get install -y nodejs
           node -v
 
-      - name: Build project
+      - name: Build Java Project (for Java)
+        if: matrix.language == 'java'
         run: |
           mvn -f services/demo/pom.xml clean compile
           echo "Verifying compiled classes:"
@@ -48,12 +53,12 @@ jobs:
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
-          languages: java, javascript
-          #queries: ./codeql-queries/javascript/test.ql
-          queries: ./codeql-queries/javascript/InsecureEval.ql
-          build-mode: manual
+          languages: ${{ matrix.language }}
+          queries: ./codeql-queries/${{ matrix.language }}/InsecureEval.ql
+          build-mode: ${{ matrix.language == 'java' && 'manual' || 'none' }}  # Java uses manual, JS uses none
 
-      - name: Manual build for CodeQL
+      - name: Manual build for CodeQL (Java only)
+        if: matrix.language == 'java'
         run: mvn -f services/demo/pom.xml clean compile
 
       - name: Perform CodeQL Analysis
