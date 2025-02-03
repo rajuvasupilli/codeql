@@ -1,0 +1,66 @@
+# .github/workflows/codeql-analysis.yml
+name: Customized CodeQL Analysis
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - THEP-56
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  codeql:
+    name: Run CodeQL Analysis
+    permissions: write-all
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Print directory contents
+        run: |
+          pwd
+          ls -la
+          ls -l codeql-queries || echo "'codeql-queries' not found"
+          find . -name "*.java" -o -name "*.js"
+
+      - name: Install Node.js
+        run: |
+          curl -sL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+          sudo apt-get install -y nodejs
+          node -v
+
+      - name: Build project
+        run: |
+          cd services/demo
+          mvn clean compile
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: java, javascript
+          queries: ./codeql-queries
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: custom
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Locate and Parse SARIF results
+        run: |
+          sarif_files=$(find . -name '*.sarif')
+          if [[ -z "$sarif_files" ]]; then
+            echo "❌ No SARIF files found."
+            exit 1
+          fi
+          for file in $sarif_files; do
+            jq -r '.runs[].results[] | "\(.level | ascii_upcase): \(.message.text) [File: \(.locations[0].physicalLocation.artifactLocation.uri)]"' "$file" || echo "✅ No issues found!"
+          done
+
