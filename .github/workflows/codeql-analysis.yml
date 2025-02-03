@@ -66,17 +66,32 @@ jobs:
         with:
           category: custom
 
+      - name: Print CodeQL SARIF Report
+        run: |
+          # Find the first SARIF file in the expected results directory
+          sarif_file=$(find /home/runner/work/codeql/results -iname '*.sarif' | head -n 1)
+          if [ -n "$sarif_file" ]; then
+            echo "Printing contents of SARIF report: $sarif_file"
+            # If jq is available, pretty-print the JSON; otherwise, use cat.
+            if command -v jq > /dev/null; then
+              jq . "$sarif_file"
+            else
+              cat "$sarif_file"
+            fi
+          else
+            echo "No SARIF report found."
+          fi
+
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
 
       - name: Locate and Parse SARIF results
         run: |
-          find ~ -type f -iname *.sarif
+          find ~ -type f -iname "*.sarif"
           pwd
           ls -l
           echo "Searching for SARIF files..."
-          #sarif_files=$(find /home/runner/_work/ep-sred/results -iname '*.sarif')
-          sarif_files=$(find /home/runner/work/codeql/results -iname '*.sarif')          
+          sarif_files=$(find /home/runner/work/codeql/results -iname "*.sarif")          
           if [[ -z "$sarif_files" ]]; then
             echo "❌ No SARIF files found. CodeQL analysis may have failed."
             exit 1
