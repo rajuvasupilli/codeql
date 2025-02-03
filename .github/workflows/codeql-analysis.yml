@@ -16,7 +16,7 @@ jobs:
     name: Run CodeQL Analysis
     permissions: write-all
     #runs-on: aks-arc
-    runs-on: [self-hosted, ubuntu]
+    runs-on: [ubuntu-latest]
 
     steps:
       - name: Checkout repository
