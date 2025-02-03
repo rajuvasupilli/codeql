@@ -71,6 +71,9 @@ jobs:
 
       - name: Locate and Parse SARIF results
         run: |
+          find ~ -type f -iname *.sarif
+          pwd
+          ls -l
           echo "Searching for SARIF files..."
           sarif_files=$(find /home/runner/_work/ep-sred/results -iname '*.sarif')
           if [[ -z "$sarif_files" ]]; then
