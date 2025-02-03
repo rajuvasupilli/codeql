@@ -49,7 +49,8 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: java, javascript
-          queries: ./codeql-queries/javascript/test.ql
+          #queries: ./codeql-queries/javascript/test.ql
+          queries: ./codeql-queries/javascript/InsecureEval.ql
           build-mode: manual
 
       - name: Manual build for CodeQL
