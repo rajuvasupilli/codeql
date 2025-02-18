@@ -1,10 +1,21 @@
 name: CodeQL Analysis
-
 on:
+  workflow_dispatch:
   push:
-    paths:
-      - '**/*.js'  # You can adjust this to the file patterns you care about
-    types: [opened, synchronize, reopened]
+    branches:
+      - THEP-56
+
+jobs:
+  codeql:
+    name: Run CodeQL Analysis
+    runs-on: aks-arc
+
+    permissions:
+      security-events: write
+      packages: read
+      actions: read
+      contents: read
+
 
 jobs:
   analyze:
