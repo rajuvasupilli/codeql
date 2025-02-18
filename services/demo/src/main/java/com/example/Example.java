@@ -3,3 +3,5 @@ public class Example {
         System.out.println("Hello, CodeQL!");
     }
 }
+
+
