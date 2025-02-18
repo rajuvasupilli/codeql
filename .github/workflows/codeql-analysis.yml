@@ -1,7 +1,7 @@
 name: Customized CodeQL Analysis
 
 on:
-  workflow_dispatch: # Manual trigger
+  workflow_dispatch:  # Manual trigger
   push:
     branches:
       - THEP-56
@@ -13,18 +13,18 @@ permissions:
 jobs:
   codeql:
     name: Run CodeQL Analysis
-    permissions: write-all
-    runs-on: [ubuntu-latest]
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 2  # Ensures we can compare against the previous commit
 
-      - name: Get changed files
+      - name: Get Changed Files
         id: changed-files
         run: |
-          git fetch origin ${{ github.event.before }}
-          CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} -- '*.java' '*.js')
+          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD -- '*.java' '*.js')
           if [[ -z "$CHANGED_FILES" ]]; then
             echo "No Java or JavaScript files changed. Skipping CodeQL."
             echo "skip_codeql=true" >> $GITHUB_ENV
@@ -35,51 +35,31 @@ jobs:
             echo "skip_codeql=false" >> $GITHUB_ENV
           fi
 
-      - name: Install Node.js
+      - name: Initialize CodeQL
         if: env.skip_codeql == 'false'
-        run: |
-          curl -sL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-          sudo apt-get install -y nodejs
-          node -v
+        uses: github/codeql-action/init@v3
+        with:
+          languages: java, javascript
+          queries: security-and-quality
+          build-mode: manual
 
-      - name: Build project
+      - name: Build Java Project
         if: env.skip_codeql == 'false'
         run: |
           mvn -f services/demo/pom.xml clean compile
           echo "Verifying compiled classes:"
           find services/demo -name "*.class" || echo "❌ No .class files found"
 
-      - name: Initialize CodeQL
+      - name: Perform CodeQL Analysis on Changed Files
         if: env.skip_codeql == 'false'
-        uses: github/codeql-action/init@v3
-        with:
-          languages: java, javascript
-          queries: ./codeql-queries/
-          build-mode: none
+        run: |
+          for file in $(cat changed_files.txt); do
+            echo "Analyzing $file..."
+            codeql database create --language=java --source-root="$(dirname "$file")" --database=codeql_db
+          done
 
-      - name: Manual build for CodeQL
-        if: env.skip_codeql == 'false'
-        run: mvn -f services/demo/pom.xml clean compile
-
-      - name: Perform CodeQL Analysis
+      - name: Run CodeQL Analysis
         if: env.skip_codeql == 'false'
         uses: github/codeql-action/analyze@v3
         with:
           category: custom
-
-      - name: Locate and Parse SARIF results
-        if: env.skip_codeql == 'false'
-        run: |
-          echo "Searching for SARIF files..."
-          sarif_files=$(find /home/runner/_work/ep-sred/results -iname '*.sarif')
-          if [[ -z "$sarif_files" ]]; then
-            echo "❌ No SARIF files found. CodeQL analysis may have failed."
-            exit 1
-          fi
-          echo "SARIF_FILES: $sarif_files"
-          
-          for file in $sarif_files; do
-            echo "Processing SARIF file: $file"
-            jq -r '.runs[].results[] | "\(.level | ascii_upcase): \(.message.text) [File: \(.locations[0].physicalLocation.artifactLocation.uri)]"' "$file" || echo "✅ No issues found!"
-          done
-        shell: bash
