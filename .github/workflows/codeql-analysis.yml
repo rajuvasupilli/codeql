@@ -1,7 +1,7 @@
 name: CodeQL Analysis
 
 on:
-  pull_request:
+  push:
     paths:
       - '**/*.js'  # You can adjust this to the file patterns you care about
     types: [opened, synchronize, reopened]
