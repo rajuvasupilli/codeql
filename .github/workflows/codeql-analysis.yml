@@ -23,16 +23,16 @@ jobs:
         include:
           - language: java-kotlin
             build-mode: none
-            file-filter: "*.java *.kt"
+            file-filter: '.*\.java|.*\.kt'
           - language: javascript-typescript
             build-mode: none
-            file-filter: "*.js *.ts"
+            file-filter: '.*\.js|.*\.ts'
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2  # Fetch last two commits to compare changes
+          fetch-depth: 2  # Fetches last two commits to compare changes
 
       - name: Get list of modified files
         id: changed-files
@@ -49,10 +49,7 @@ jobs:
         id: skip-analysis
         run: |
           pattern="${{ matrix.file-filter }}"
-          pattern=$(echo "$pattern" | tr ' ' '|')  # Convert spaces to '|'
-          echo "Filtered pattern: $pattern"
-          
-          if ! echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -Eq "$pattern"; then
+          if ! echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -E "$pattern"; then
             echo "No relevant files changed. Skipping analysis."
             echo "skip=true" >> $GITHUB_ENV
           fi
@@ -61,12 +58,7 @@ jobs:
         id: filter-files
         run: |
           pattern="${{ matrix.file-filter }}"
-          pattern=$(echo "$pattern" | tr ' ' '|')  # Convert spaces to '|'
-          
-          echo "Updated PATTERN: $pattern"
-          
           files_to_analyze=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -E "$pattern" || true)
-          
           echo "Files to analyze: $files_to_analyze"
           echo "FILES_TO_ANALYZE=$files_to_analyze" >> $GITHUB_ENV
 
@@ -91,21 +83,4 @@ jobs:
         with:
           category: "/language:${{ matrix.language }}-${{ matrix.build-mode }}"
           files: ${{ env.FILES_TO_ANALYZE }}
-
-      - name: Extract Security Findings
-        if: env.skip != 'true'
-        run: |
-          sarif_file=$(find /home/runner/_work/ep-sred/results -iname '*.sarif' | head -n 1)
-          if [ -n "$sarif_file" ]; then
-            echo "Extracting findings from: $sarif_file"
-            jq -r '.runs[].results[] | 
-            {rule: .ruleId, 
-             message: .message.text, 
-             file: .locations[].physicalLocation.artifactLocation.uri, 
-             line: .locations[].physicalLocation.region.startLine,
-             severity: (.properties."problem.severity" // .level // "UNKNOWN") }' "$sarif_file" > parsed_results.json
-            cat parsed_results.json
-          else
-            echo "No SARIF report found."
-          fi
 
