@@ -8,7 +8,7 @@ on:
 jobs:
   codeql:
     name: Run CodeQL Analysis
-    runs-on: aks-arc
+    runs-on: ubuntu-latest
 
     permissions:
       security-events: write
@@ -17,10 +17,6 @@ jobs:
       contents: read
 
 
-jobs:
-  analyze:
-    name: Analyze CodeQL
-    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
