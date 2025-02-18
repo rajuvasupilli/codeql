@@ -41,7 +41,8 @@ jobs:
           json: true  # Ensures output is a JSON array
 
       - name: Display changed files
-        run: echo "Modified files: ${{ steps.changed-files.outputs.all_changed_files }}"
+        run: |
+          echo "Modified files: ${{ steps.changed-files.outputs.all_changed_files }}"
 
       - name: Filter files for CodeQL analysis
         id: filter-files
