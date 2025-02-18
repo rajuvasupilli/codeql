@@ -4,13 +4,12 @@ on:
   workflow_dispatch:  # Manual trigger
   push:
     branches:
-      - THEP-56  # ✅ Removed 'main' branch condition
+      - THEP-56
 
 jobs:
   codeql:
     name: Run CodeQL Analysis
-    #runs-on: aks-arc
-    runs-on: ubuntu-latest
+    runs-on: aks-arc
 
     permissions:
       security-events: write
@@ -23,17 +22,17 @@ jobs:
       matrix:
         include:
           - language: java-kotlin
-            build-mode: manual
-            file-filter: '**/*.java **/*.kt'
+            build-mode: none
+            file-filter: "*.java *.kt"
           - language: javascript-typescript
-            build-mode: none  # ✅ FIX: JavaScript does not support "manual" mode
-            file-filter: '**/*.js **/*.ts'
+            build-mode: none
+            file-filter: "*.js *.ts"
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2  # ✅ Fetches the last two commits to compare changes
+          fetch-depth: 2  # Fetch last two commits to compare changes
 
       - name: Get list of modified files
         id: changed-files
@@ -50,8 +49,10 @@ jobs:
         id: skip-analysis
         run: |
           pattern="${{ matrix.file-filter }}"
-          pattern="${pattern// /|}"  # Convert spaces into OR patterns
-          if ! echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -qE "$pattern"; then
+          pattern=$(echo "$pattern" | tr ' ' '|')  # Convert spaces to '|'
+          echo "Filtered pattern: $pattern"
+          
+          if ! echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -Eq "$pattern"; then
             echo "No relevant files changed. Skipping analysis."
             echo "skip=true" >> $GITHUB_ENV
           fi
@@ -60,9 +61,12 @@ jobs:
         id: filter-files
         run: |
           pattern="${{ matrix.file-filter }}"
-          pattern="${pattern//\*/}"  # Remove '**/' from the pattern
-          pattern="${pattern// /|}"  # Convert spaces into '|'
-          files_to_analyze=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -E "$pattern" | tr '\n' ' ')
+          pattern=$(echo "$pattern" | tr ' ' '|')  # Convert spaces to '|'
+          
+          echo "Updated PATTERN: $pattern"
+          
+          files_to_analyze=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -E "$pattern" || true)
+          
           echo "Files to analyze: $files_to_analyze"
           echo "FILES_TO_ANALYZE=$files_to_analyze" >> $GITHUB_ENV
 
@@ -80,13 +84,6 @@ jobs:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
           queries: ./codeql-queries/${{ matrix.language }}/
-
-      - name: Build Java Project
-        if: matrix.language == 'java-kotlin' && env.skip != 'true'
-        run: |
-          mvn -f services/demo/pom.xml clean compile
-          echo "Verifying compiled classes:"
-          find services/demo -name "*.class" || echo "❌ No .class files found"
 
       - name: Perform CodeQL Analysis
         if: env.skip != 'true' && env.FILES_TO_ANALYZE != ''
