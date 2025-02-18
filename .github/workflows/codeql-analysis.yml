@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - THEP-56
-      - main
 
 permissions:
   contents: read
@@ -15,97 +14,72 @@ jobs:
   codeql:
     name: Run CodeQL Analysis
     permissions: write-all
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        language: [java, javascript]  # Analyze both Java and JavaScript
+    runs-on: [ubuntu-latest]
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Print directory contents
+      - name: Get changed files
+        id: changed-files
         run: |
-          echo "Current Directory:"
-          pwd
-          echo "Directory Contents:"
-          ls -la
-          echo "Contents of 'codeql-queries':"
-          ls -l codeql-queries || echo "'codeql-queries' not found"
-          find . -name "*.java" -o -name "*.js"
+          git fetch origin ${{ github.event.before }}
+          CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} -- '*.java' '*.js')
+          if [[ -z "$CHANGED_FILES" ]]; then
+            echo "No Java or JavaScript files changed. Skipping CodeQL."
+            echo "skip_codeql=true" >> $GITHUB_ENV
+          else
+            echo "Changed files:"
+            echo "$CHANGED_FILES"
+            echo "$CHANGED_FILES" > changed_files.txt
+            echo "skip_codeql=false" >> $GITHUB_ENV
+          fi
 
-      - name: Install Node.js (for JavaScript)
-        if: matrix.language == 'javascript'
+      - name: Install Node.js
+        if: env.skip_codeql == 'false'
         run: |
           curl -sL https://deb.nodesource.com/setup_20.x | sudo -E bash -
           sudo apt-get install -y nodejs
           node -v
 
-      - name: Build Java Project (for Java)
-        if: matrix.language == 'java'
+      - name: Build project
+        if: env.skip_codeql == 'false'
         run: |
           mvn -f services/demo/pom.xml clean compile
           echo "Verifying compiled classes:"
           find services/demo -name "*.class" || echo "❌ No .class files found"
-        shell: bash
 
       - name: Initialize CodeQL
+        if: env.skip_codeql == 'false'
         uses: github/codeql-action/init@v3
         with:
-          languages: ${{ matrix.language }}
-          queries: ./codeql-queries/${{ matrix.language }}/InsecureEval.ql
-          build-mode: ${{ matrix.language == 'java' && 'manual' || 'none' }}  # Java uses manual, JS uses none
+          languages: java, javascript
+          queries: ./codeql-queries/
+          build-mode: manual
 
-      - name: Manual build for CodeQL (Java only)
-        if: matrix.language == 'java'
+      - name: Manual build for CodeQL
+        if: env.skip_codeql == 'false'
         run: mvn -f services/demo/pom.xml clean compile
 
       - name: Perform CodeQL Analysis
+        if: env.skip_codeql == 'false'
         uses: github/codeql-action/analyze@v3
         with:
           category: custom
 
-      - name: Print CodeQL SARIF Report
-        run: |
-          # Find the first SARIF file in the expected results directory
-          sarif_file=$(find /home/runner/work/codeql/results -iname '*.sarif' | head -n 1)
-          if [ -n "$sarif_file" ]; then
-            echo "Printing contents of SARIF report: $sarif_file"
-            # If jq is available, pretty-print the JSON; otherwise, use cat.
-            if command -v jq > /dev/null; then
-              jq . "$sarif_file"
-            else
-              cat "$sarif_file"
-            fi
-          else
-            echo "No SARIF report found."
-          fi
-
-      - name: Install jq
-        run: sudo apt-get update && sudo apt-get install -y jq
-
       - name: Locate and Parse SARIF results
+        if: env.skip_codeql == 'false'
         run: |
-          find ~ -type f -iname "*.sarif"
-          pwd
-          ls -l
           echo "Searching for SARIF files..."
-          sarif_files=$(find /home/runner/work/codeql/results -iname "*.sarif")          
+          sarif_files=$(find /home/runner/_work/ep-sred/results -iname '*.sarif')
           if [[ -z "$sarif_files" ]]; then
             echo "❌ No SARIF files found. CodeQL analysis may have failed."
             exit 1
           fi
           echo "SARIF_FILES: $sarif_files"
-
+          
           for file in $sarif_files; do
             echo "Processing SARIF file: $file"
-            cat "$file" | jq . > /dev/null 2>&1
-            if [[ $? -ne 0 ]]; then
-              echo "❌ ERROR: The file $file is not a valid JSON or is empty."
-              cat "$file"
-              exit 1
-            fi
-            jq -r '.runs[].results[] | "\(.level | ascii_upcase): \(.message.text) [File: \(.locations[0].physicalLocation.artifactLocation.uri)]"' "$file" || echo "✅ No issues found!" 
+            jq -r '.runs[].results[] | "\(.level | ascii_upcase): \(.message.text) [File: \(.locations[0].physicalLocation.artifactLocation.uri)]"' "$file" || echo "✅ No issues found!"
           done
         shell: bash
