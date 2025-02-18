@@ -27,7 +27,6 @@ jobs:
           languages: javascript  # Update this with your languages (e.g., javascript, python, etc.)
 
       - name: Perform CodeQL Analysis
-        if: env.skip != 'true' && env.FILES_TO_ANALYZE != ''
         uses: github/codeql-action/analyze@v3
         with:
           category: "/language:${{ matrix.language }}-${{ matrix.build-mode }}"
