@@ -32,3 +32,7 @@ jobs:
           category: "/language:${{ matrix.language }}-${{ matrix.build-mode }}"
           changed-files-only: true
 
+      - name: Print the Sarif Report
+        run: |
+          cat /home/runner/work/codeql/results/javascript.sarif
+
