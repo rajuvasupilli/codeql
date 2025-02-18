@@ -4,62 +4,110 @@ on:
   workflow_dispatch:  # Manual trigger
   push:
     branches:
-      - THEP-56
-
-permissions:
-  contents: read
-  security-events: write
+      - THEP-56  # ✅ Removed 'main' branch condition
 
 jobs:
   codeql:
     name: Run CodeQL Analysis
-    runs-on: ubuntu-latest
+    runs-on: aks-arc
+
+    permissions:
+      security-events: write
+      packages: read
+      actions: read
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: java-kotlin
+            build-mode: manual
+            file-filter: '**/*.java **/*.kt'
+          - language: javascript-typescript
+            build-mode: none  # ✅ FIX: JavaScript does not support "manual" mode
+            file-filter: '**/*.js **/*.ts'
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 2  # Ensures we can compare against the previous commit
+          fetch-depth: 2  # ✅ Fetches the last two commits to compare changes
 
-      - name: Get Changed Files
+      - name: Get list of modified files
         id: changed-files
+        uses: tj-actions/changed-files@v44
+        with:
+          separator: ' '
+          json: true
+
+      - name: Display changed files
         run: |
-          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD -- '*.java' '*.js')
-          if [[ -z "$CHANGED_FILES" ]]; then
-            echo "No Java or JavaScript files changed. Skipping CodeQL."
-            echo "skip_codeql=true" >> $GITHUB_ENV
-          else
-            echo "Changed files:"
-            echo "$CHANGED_FILES"
-            echo "$CHANGED_FILES" > changed_files.txt
-            echo "skip_codeql=false" >> $GITHUB_ENV
+          echo "Modified files: ${{ steps.changed-files.outputs.all_changed_files }}"
+
+      - name: Skip analysis if no relevant files changed
+        id: skip-analysis
+        run: |
+          pattern="${{ matrix.file-filter }}"
+          pattern="${pattern// /|}"  # Convert spaces into OR patterns
+          if ! echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -qE "$pattern"; then
+            echo "No relevant files changed. Skipping analysis."
+            echo "skip=true" >> $GITHUB_ENV
           fi
 
+      - name: Filter files for CodeQL analysis
+        id: filter-files
+        run: |
+          pattern="${{ matrix.file-filter }}"
+          pattern="${pattern//\*/}"  # Remove '**/' from the pattern
+          pattern="${pattern// /|}"  # Convert spaces into '|'
+          files_to_analyze=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -E "$pattern" | tr '\n' ' ')
+          echo "Files to analyze: $files_to_analyze"
+          echo "FILES_TO_ANALYZE=$files_to_analyze" >> $GITHUB_ENV
+
+      - name: Install Node.js (for JavaScript)
+        if: matrix.language == 'javascript-typescript' && env.skip != 'true'
+        run: |
+          curl -sL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+          sudo apt-get install -y nodejs
+          node -v
+
       - name: Initialize CodeQL
-        if: env.skip_codeql == 'false'
+        if: env.skip != 'true'
         uses: github/codeql-action/init@v3
         with:
-          languages: java, javascript
-          queries: security-and-quality
-          build-mode: manual
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          queries: ./codeql-queries/${{ matrix.language }}/
 
       - name: Build Java Project
-        if: env.skip_codeql == 'false'
+        if: matrix.language == 'java-kotlin' && env.skip != 'true'
         run: |
           mvn -f services/demo/pom.xml clean compile
           echo "Verifying compiled classes:"
           find services/demo -name "*.class" || echo "❌ No .class files found"
 
-      - name: Perform CodeQL Analysis on Changed Files
-        if: env.skip_codeql == 'false'
-        run: |
-          for file in $(cat changed_files.txt); do
-            echo "Analyzing $file..."
-            codeql database create --language=java --source-root="$(dirname "$file")" --database=codeql_db
-          done
-
-      - name: Run CodeQL Analysis
-        if: env.skip_codeql == 'false'
+      - name: Perform CodeQL Analysis
+        if: env.skip != 'true' && env.FILES_TO_ANALYZE != ''
         uses: github/codeql-action/analyze@v3
         with:
-          category: custom
+          category: "/language:${{ matrix.language }}-${{ matrix.build-mode }}"
+          files: ${{ env.FILES_TO_ANALYZE }}
+
+      - name: Extract Security Findings
+        if: env.skip != 'true'
+        run: |
+          sarif_file=$(find /home/runner/_work/ep-sred/results -iname '*.sarif' | head -n 1)
+          if [ -n "$sarif_file" ]; then
+            echo "Extracting findings from: $sarif_file"
+            jq -r '.runs[].results[] | 
+            {rule: .ruleId, 
+             message: .message.text, 
+             file: .locations[].physicalLocation.artifactLocation.uri, 
+             line: .locations[].physicalLocation.region.startLine,
+             severity: (.properties."problem.severity" // .level // "UNKNOWN") }' "$sarif_file" > parsed_results.json
+            cat parsed_results.json
+          else
+            echo "No SARIF report found."
+          fi
+
