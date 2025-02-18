@@ -1,86 +1,28 @@
-name: Customized CodeQL Analysis
+name: CodeQL Analysis
 
 on:
-  workflow_dispatch:  # Manual trigger
-  push:
-    branches:
-      - THEP-56
+  pull_request:
+    paths:
+      - '**/*.js'  # You can adjust this to the file patterns you care about
+    types: [opened, synchronize, reopened]
 
 jobs:
-  codeql:
-    name: Run CodeQL Analysis
+  analyze:
+    name: Analyze CodeQL
     runs-on: ubuntu-latest
-
-    permissions:
-      security-events: write
-      packages: read
-      actions: read
-      contents: read
-
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - language: java-kotlin
-            build-mode: none
-            file-filter: '.*\.java|.*\.kt'
-          - language: javascript-typescript
-            build-mode: none
-            file-filter: '.*\.js|.*\.ts'
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 2  # Fetches last two commits to compare changes
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      - name: Get list of modified files
-        id: changed-files
-        uses: tj-actions/changed-files@v44
-        with:
-          json: true  # Ensures output is a JSON array
-
-      - name: Display changed files
-        run: |
-          echo "Modified files: ${{ steps.changed-files.outputs.all_changed_files }}"
-
-      - name: Filter files for CodeQL analysis
-        id: filter-files
-        run: |
-          pattern="${{ matrix.file-filter }}"
-
-          # Convert JSON array to newline-separated list (without escape characters)
-          files=$(echo '${{ steps.changed-files.outputs.all_changed_files }}' | jq -r '.[]')
-
-          # Filter files based on pattern
-          files_to_analyze=$(echo "$files" | grep -E "$pattern" || true)
-
-          if [[ -z "$files_to_analyze" ]]; then
-            echo "No relevant files changed. Skipping analysis."
-            echo "skip=true" >> $GITHUB_ENV
-          else
-            echo "Files to analyze: $files_to_analyze"
-            echo "FILES_TO_ANALYZE=$files_to_analyze" >> $GITHUB_ENV
-
-      - name: Install Node.js (for JavaScript)
-        if: matrix.language == 'javascript-typescript' && env.skip != 'true'
-        run: |
-          curl -sL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-          sudo apt-get install -y nodejs
-          node -v
-
-      - name: Initialize CodeQL
-        if: env.skip != 'true'
+      - name: Set up CodeQL
         uses: github/codeql-action/init@v3
         with:
-          languages: ${{ matrix.language }}
-          build-mode: ${{ matrix.build-mode }}
-          queries: ./codeql-queries/${{ matrix.language }}/
+          languages: javascript  # Update this with your languages (e.g., javascript, python, etc.)
 
       - name: Perform CodeQL Analysis
         if: env.skip != 'true' && env.FILES_TO_ANALYZE != ''
         uses: github/codeql-action/analyze@v3
         with:
           category: "/language:${{ matrix.language }}-${{ matrix.build-mode }}"
-          files: ${{ env.FILES_TO_ANALYZE }}
+          changed-files-only: true
 
