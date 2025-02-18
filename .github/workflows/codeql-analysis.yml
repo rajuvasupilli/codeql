@@ -38,29 +38,29 @@ jobs:
         id: changed-files
         uses: tj-actions/changed-files@v44
         with:
-          separator: ' '
-          json: true
+          json: true  # Ensures output is a JSON array
 
       - name: Display changed files
-        run: |
-          echo "Modified files: ${{ steps.changed-files.outputs.all_changed_files }}"
-
-      - name: Skip analysis if no relevant files changed
-        id: skip-analysis
-        run: |
-          pattern="${{ matrix.file-filter }}"
-          if ! echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -E "$pattern"; then
-            echo "No relevant files changed. Skipping analysis."
-            echo "skip=true" >> $GITHUB_ENV
-          fi
+        run: echo "Modified files: ${{ steps.changed-files.outputs.all_changed_files }}"
 
       - name: Filter files for CodeQL analysis
         id: filter-files
         run: |
           pattern="${{ matrix.file-filter }}"
-          files_to_analyze=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -E "$pattern" || true)
-          echo "Files to analyze: $files_to_analyze"
-          echo "FILES_TO_ANALYZE=$files_to_analyze" >> $GITHUB_ENV
+          
+          # Convert JSON array to newline-separated list
+          files=$(echo '${{ steps.changed-files.outputs.all_changed_files }}' | jq -r '.[]')
+
+          # Filter files based on pattern
+          files_to_analyze=$(echo "$files" | grep -E "$pattern" || true)
+
+          if [[ -z "$files_to_analyze" ]]; then
+            echo "No relevant files changed. Skipping analysis."
+            echo "skip=true" >> $GITHUB_ENV
+          else
+            echo "Files to analyze: $files_to_analyze"
+            echo "FILES_TO_ANALYZE=$files_to_analyze" >> $GITHUB_ENV
+          fi
 
       - name: Install Node.js (for JavaScript)
         if: matrix.language == 'javascript-typescript' && env.skip != 'true'
