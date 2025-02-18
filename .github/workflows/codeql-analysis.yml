@@ -55,7 +55,7 @@ jobs:
         with:
           languages: java, javascript
           queries: ./codeql-queries/
-          build-mode: manual
+          build-mode: none
 
       - name: Manual build for CodeQL
         if: env.skip_codeql == 'false'
