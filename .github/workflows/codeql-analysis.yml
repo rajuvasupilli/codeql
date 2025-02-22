@@ -1,8 +1,5 @@
-
-name: Customized CodeQL Analysis
-
 on:
-  workflow_dispatch: # Manual trigger
+  workflow_dispatch:
   push:
     branches:
       - THEP-56
@@ -10,7 +7,6 @@ on:
 jobs:
   codeql:
     name: Run CodeQL Analysis
-    #runs-on: aks-arc
     runs-on: ubuntu-latest
 
     permissions:
@@ -34,7 +30,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2  # Fetches last two commits to compare changes
+          fetch-depth: 2
 
       - name: Get list of modified files
         id: changed-files
@@ -46,36 +42,47 @@ jobs:
       - name: Display changed files
         run: |
           echo "Modified files: ${{ steps.changed-files.outputs.all_changed_files }}"
-
       - name: Skip analysis if no relevant files changed
         id: skip-analysis
         run: |
-          if ! echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -qE "${{ matrix.file-filter }}"; then
+          pattern="${{ matrix.file-filter }}"
+          grep_pattern=$(echo "$pattern" | tr ' ' '\n' | sed 's/^/-e /' | tr '\n' ' ')
+          echo "GREP_PATTERN: '$grep_pattern'"
+          if ! echo "${{ steps.changed-files.outputs.all_changed_files }}" | tr -d '[]"' | tr ',' '\n' | grep $grep_pattern; then
             echo "No relevant files changed. Skipping analysis."
             echo "skip=true" >> $GITHUB_ENV
           fi
-
+      - name: Filter files for CodeQL analysis
+        id: filter-files
+        run: |
+          grep_pattern=$(echo "${{ matrix.file-filter }}" | tr ' ' '\n' | sed 's/^/-e /' | tr '\n' ' ')
+          files_to_analyze=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | tr -d '[]"' | tr ',' '\n' | grep $grep_pattern || true)
+          if [ -z "$files_to_analyze" ]; then
+            echo "No relevant files found for analysis."
+            echo "skip=true" >> $GITHUB_ENV
+          else
+            echo "Files to analyze: $files_to_analyze"
+            echo "FILES_TO_ANALYZE=$files_to_analyze" >> $GITHUB_ENV
+          fi
       - name: Install Node.js (for JavaScript)
         if: matrix.language == 'javascript-typescript' && env.skip != 'true'
         run: |
           curl -sL https://deb.nodesource.com/setup_20.x | sudo -E bash -
           sudo apt-get install -y nodejs
           node -v
-
       - name: Initialize CodeQL
         if: env.skip != 'true'
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
-          queries: ./codeql-queries/${{ matrix.language }}/
 
       - name: Perform CodeQL Analysis
-        if: env.skip != 'true'
+        if: env.skip != 'true' && env.FILES_TO_ANALYZE != ''
         uses: github/codeql-action/analyze@v3
         with:
           category: "/language:${{ matrix.language }}-${{ matrix.build-mode }}"
-
+         
       - name: Extract Security Findings
         if: env.skip != 'true'
         run: |
@@ -92,12 +99,3 @@ jobs:
           else
             echo "No SARIF report found."
           fi
-
-      - name: Upload Security Findings to Datadog
-        if: env.skip != 'true'
-        run: |
-          curl -k -X POST "https://http-intake.logs.datadoghq.com/v1/input" \
-              -H "Content-Type: application/json" \
-              -H "DD-API-KEY: ${{ secrets.DATADOG_API_KEY }}" \
-              -d @parsed_results.json
-
