@@ -7,7 +7,7 @@ on:
 jobs:
   codeql:
     name: Run CodeQL Analysis
-    runs-on: ubuntu-latest
+	runs-on: ubuntu-latest
 
     permissions:
       security-events: write
@@ -87,7 +87,7 @@ jobs:
       - name: Extract Security 
         if: env.skip != 'true'
         run: |
-          sarif_file=$(find /home/runner/_work/ep-sred/results -iname '*.sarif' | head -n 1)
+          sarif_file=$(find /home/runner/work/codeql/results -iname '*.sarif' | head -n 1)
           if [ -n "$sarif_file" ]; then
             echo "Printing the sarif file:"
             head -n 1000 $sarif_file
