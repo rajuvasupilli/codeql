@@ -91,7 +91,7 @@ jobs:
         if: env.skip != 'true'
         run: |
           set -e
-          sarif_file=$(find /home/runner/work/codeql/results -iname '*.sarif' | head -n 1)
+          sarif_file="/home/runner/work/codeql/results/javascript.sarif"
           if [ ! -f "$sarif_file" ]; then
             echo "❌ SARIF file not found!"
             exit 1
@@ -100,7 +100,15 @@ jobs:
           fi
           
           echo "Printing SARIF file preview:"
-          cat "$sarif_file" | head -n 50  # Print first 50 lines
+          jq '.' "$sarif_file" | head -n 50
+          
+          echo "Checking if SARIF contains findings..."
+          results_count=$(jq '.runs[].results | length' "$sarif_file")
+          echo "SARIF contains $results_count findings"
+          if [[ "$results_count" -eq 0 ]]; then
+            echo "⚠️ No findings detected in SARIF file."
+            exit 0
+          fi
           
           echo "Extracting findings from: $sarif_file"
           
@@ -108,9 +116,14 @@ jobs:
           echo "Changed files list:"
           echo "$changed_files"
           
-          jq -r --argjson changed_files "$(echo "$changed_files" | jq -R . | jq -s .)" '
-            .runs[].results[] |
-            { rule: .ruleId, message: .message.text, file: .locations[].physicalLocation.artifactLocation.uri }
+          jq -r '
+            .runs[].results[] | 
+            { 
+              rule: .ruleId, 
+              message: .message.text, 
+              file: .locations[].physicalLocation.artifactLocation.uri, 
+              line: .locations[].physicalLocation.region.startLine 
+            }
           ' "$sarif_file" > parsed_results.json
           
           echo "Parsed results output:"
