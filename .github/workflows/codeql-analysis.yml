@@ -96,8 +96,8 @@ jobs:
           if [ -n "$sarif_file" ]; then
             echo "✅ Found SARIF file: $sarif_file"
             
-            echo "Extracting key-value mapping (id : problem.severity) from SARIF..."
-            jq -r '[.runs[]?.results[]? 
+            echo "Extracting key-value mapping (id : problem.severity) from SARIF rules..."
+            jq -r '[.runs[].tool.extensions[].rules[]? 
               | select(.properties and .properties.id and .properties["problem.severity"])
               | {(.properties.id): .properties["problem.severity"]}
             ] | add' "$sarif_file" > mapping.json
