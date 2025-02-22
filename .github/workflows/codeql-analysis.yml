@@ -86,6 +86,10 @@ jobs:
         uses: github/codeql-action/analyze@v3
         with:
           category: "/language:${{ matrix.language }}-${{ matrix.build-mode }}"
+		  
+      - name: Debug SARIF JSON
+        run: |
+          jq '.' /home/runner/work/codeql/results/javascript.sarif | head -n 50
 
       - name: Extract Security 
         if: env.skip != 'true'
