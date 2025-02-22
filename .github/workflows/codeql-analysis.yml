@@ -120,4 +120,3 @@ jobs:
           
           echo "Parsed results output:"
           cat parsed_results.json
-
