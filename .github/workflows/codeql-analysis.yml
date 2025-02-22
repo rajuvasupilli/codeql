@@ -1,5 +1,8 @@
+
+name: Customized CodeQL Analysis
+
 on:
-  workflow_dispatch:
+  workflow_dispatch: # Manual trigger
   push:
     branches:
       - THEP-56
@@ -7,7 +10,7 @@ on:
 jobs:
   codeql:
     name: Run CodeQL Analysis
-    runs-on: ubuntu-latest
+    runs-on: aks-arc
 
     permissions:
       security-events: write
@@ -21,16 +24,16 @@ jobs:
         include:
           - language: java-kotlin
             build-mode: none
-            file-filter: '.java .kt'
+            file-filter: '**/*.java **/*.kt'
           - language: javascript-typescript
             build-mode: none
-            file-filter: '.js .ts'
+            file-filter: '**/*.js **/*.ts'
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 2  # Fetches last two commits to compare changes
 
       - name: Get list of modified files
         id: changed-files
@@ -46,25 +49,9 @@ jobs:
       - name: Skip analysis if no relevant files changed
         id: skip-analysis
         run: |
-          pattern="${{ matrix.file-filter }}"
-          grep_pattern=$(echo "$pattern" | tr ' ' '\n' | sed 's/^/-e /' | tr '\n' ' ')
-          echo "GREP_PATTERN: '$grep_pattern'"
-          if ! echo "${{ steps.changed-files.outputs.all_changed_files }}" | tr -d '[]"' | tr ',' '\n' | grep $grep_pattern; then
+          if ! echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -qE "${{ matrix.file-filter }}"; then
             echo "No relevant files changed. Skipping analysis."
             echo "skip=true" >> $GITHUB_ENV
-          fi
-
-      - name: Filter files for CodeQL analysis
-        id: filter-files
-        run: |
-          grep_pattern=$(echo "${{ matrix.file-filter }}" | tr ' ' '\n' | sed 's/^/-e /' | tr '\n' ' ')
-          files_to_analyze=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | tr -d '[]"' | tr ',' '\n' | grep $grep_pattern || true)
-          if [ -z "$files_to_analyze" ]; then
-            echo "No relevant files found for analysis."
-            echo "skip=true" >> $GITHUB_ENV
-          else
-            echo "Files to analyze: $files_to_analyze"
-            echo "FILES_TO_ANALYZE=$files_to_analyze" >> $GITHUB_ENV
           fi
 
       - name: Install Node.js (for JavaScript)
@@ -80,57 +67,36 @@ jobs:
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
+          queries: ./codeql-queries/${{ matrix.language }}/
 
       - name: Perform CodeQL Analysis
-        if: env.skip != 'true' && env.FILES_TO_ANALYZE != ''
+        if: env.skip != 'true'
         uses: github/codeql-action/analyze@v3
         with:
           category: "/language:${{ matrix.language }}-${{ matrix.build-mode }}"
 
-      - name: Extract Security 
+      - name: Extract Security Findings
         if: env.skip != 'true'
         run: |
-          set -e
-          sarif_file="/home/runner/work/codeql/results/javascript.sarif"
-          if [ ! -f "$sarif_file" ]; then
-            echo "❌ SARIF file not found!"
-            exit 1
+          sarif_file=$(find /home/runner/_work/ep-sred/results -iname '*.sarif' | head -n 1)
+          if [ -n "$sarif_file" ]; then
+            echo "Extracting findings from: $sarif_file"
+            jq -r '.runs[].results[] | 
+            {rule: .ruleId, 
+             message: .message.text, 
+             file: .locations[].physicalLocation.artifactLocation.uri, 
+             line: .locations[].physicalLocation.region.startLine,
+             severity: (.properties."problem.severity" // .level // "UNKNOWN") }' "$sarif_file" > parsed_results.json
+            cat parsed_results.json
           else
-            echo "✅ Found SARIF file: $sarif_file"
+            echo "No SARIF report found."
           fi
-          
-          echo "Listing SARIF files in results directory..."
-          ls -lh /home/runner/work/codeql/results/
-          
-          echo "Printing SARIF file preview:"
-          jq '.' "$sarif_file" | head -n 100
-          
-          echo "Checking if SARIF contains findings..."
-          results_count=$(jq '.runs[].results | length' "$sarif_file")
-          echo "SARIF contains $results_count findings"
-          if [[ "$results_count" -eq 0 ]]; then
-            echo "⚠️ No findings detected in SARIF file."
-            exit 0
-          fi
-          
-          echo "Checking SARIF JSON paths..."
-          jq 'paths' "$sarif_file" | head -n 50
-          
-          echo "Extracting findings from: $sarif_file"
-          
-          changed_files=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | tr -d '[]"' | tr ',' '\n')
-          echo "Changed files list:"
-          echo "$changed_files"
-          
-          jq -r '
-            .runs[].results? // [] | 
-            map({
-              rule: .ruleId,
-              message: .message.text,
-              file: .locations[].physicalLocation.artifactLocation.uri,
-              line: .locations[].physicalLocation.region.startLine
-            }) | select(length > 0)
-          ' "$sarif_file" > parsed_results.json
-          
-          echo "Parsed results output:"
-          cat parsed_results.json
+
+      - name: Upload Security Findings to Datadog
+        if: env.skip != 'true'
+        run: |
+          curl -k -X POST "https://http-intake.logs.datadoghq.com/v1/input" \
+              -H "Content-Type: application/json" \
+              -H "DD-API-KEY: ${{ secrets.DATADOG_API_KEY }}" \
+              -d @parsed_results.json
+
