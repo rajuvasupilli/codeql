@@ -90,7 +90,7 @@ jobs:
           sarif_file=$(find /home/runner/work/codeql/results -iname '*.sarif' | head -n 1)
           if [ -n "$sarif_file" ]; then
             echo "Printing the sarif file:"
-            head -n 1000 $sarif_file
+            head -n 200 $sarif_file
             echo "Extracting findings from: $sarif_file"
             changed_files=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | tr -d '[]"' | tr ',' '\n')
             jq -r --argjson changed_files "$(echo "$changed_files" | jq -R . | jq -s .)" '
