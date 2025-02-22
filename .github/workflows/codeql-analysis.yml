@@ -10,7 +10,8 @@ on:
 jobs:
   codeql:
     name: Run CodeQL Analysis
-    runs-on: aks-arc
+    #runs-on: aks-arc
+    runs-on: ubuntu-latest
 
     permissions:
       security-events: write
