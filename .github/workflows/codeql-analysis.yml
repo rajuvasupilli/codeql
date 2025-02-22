@@ -99,6 +99,9 @@ jobs:
             echo "✅ Found SARIF file: $sarif_file"
           fi
           
+          echo "Listing SARIF files in results directory:"
+          ls -l /home/runner/work/codeql/results/
+          
           echo "Printing SARIF file preview:"
           jq '.' "$sarif_file" | head -n 50
           
@@ -110,6 +113,9 @@ jobs:
             exit 0
           fi
           
+          echo "Checking SARIF JSON paths..."
+          jq 'paths' "$sarif_file" | head -n 50
+          
           echo "Extracting findings from: $sarif_file"
           
           changed_files=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | tr -d '[]"' | tr ',' '\n')
@@ -117,7 +123,7 @@ jobs:
           echo "$changed_files"
           
           jq -r '
-            .runs[].results[] | 
+            .runs[].results? // [] | 
             { 
               rule: .ruleId, 
               message: .message.text, 
