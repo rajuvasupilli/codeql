@@ -1,4 +1,3 @@
-name: CodeQL Analysis
 on:
   workflow_dispatch:
   push:
@@ -8,7 +7,7 @@ on:
 jobs:
   codeql:
     name: Run CodeQL Analysis
-    runs-on: ubuntu-latest
+	runs-on: ubuntu-latest
 
     permissions:
       security-events: write
@@ -16,23 +15,106 @@ jobs:
       actions: read
       contents: read
 
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: java-kotlin
+            build-mode: none
+            file-filter: '.java .kt'
+          - language: javascript-typescript
+            build-mode: none
+            file-filter: '.js .ts'
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
-      - name: Set up CodeQL
+      - name: Get list of modified files
+        id: changed-files
+        uses: tj-actions/changed-files@v44
+        with:
+          separator: ' '
+          json: true
+
+      - name: Display changed files
+        run: |
+          echo "Modified files: ${{ steps.changed-files.outputs.all_changed_files }}"
+      - name: Skip analysis if no relevant files changed
+        id: skip-analysis
+        run: |
+          pattern="${{ matrix.file-filter }}"
+          grep_pattern=$(echo "$pattern" | tr ' ' '\n' | sed 's/^/-e /' | tr '\n' ' ')
+          echo "GREP_PATTERN: '$grep_pattern'"
+          if ! echo "${{ steps.changed-files.outputs.all_changed_files }}" | tr -d '[]"' | tr ',' '\n' | grep $grep_pattern; then
+            echo "No relevant files changed. Skipping analysis."
+            echo "skip=true" >> $GITHUB_ENV
+          fi
+      - name: Filter files for CodeQL analysis
+        id: filter-files
+        run: |
+          grep_pattern=$(echo "${{ matrix.file-filter }}" | tr ' ' '\n' | sed 's/^/-e /' | tr '\n' ' ')
+          files_to_analyze=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | tr -d '[]"' | tr ',' '\n' | grep $grep_pattern || true)
+          if [ -z "$files_to_analyze" ]; then
+            echo "No relevant files found for analysis."
+            echo "skip=true" >> $GITHUB_ENV
+          else
+            echo "Files to analyze: $files_to_analyze"
+            echo "FILES_TO_ANALYZE=$files_to_analyze" >> $GITHUB_ENV
+          fi
+      - name: Install Node.js (for JavaScript)
+        if: matrix.language == 'javascript-typescript' && env.skip != 'true'
+        run: |
+          curl -sL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+          sudo apt-get install -y nodejs
+          node -v
+      - name: Initialize CodeQL
+        if: env.skip != 'true'
         uses: github/codeql-action/init@v3
         with:
-          languages: javascript  # Update this with your languages (e.g., javascript, python, etc.)
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
 
       - name: Perform CodeQL Analysis
+        if: env.skip != 'true' && env.FILES_TO_ANALYZE != ''
         uses: github/codeql-action/analyze@v3
         with:
           category: "/language:${{ matrix.language }}-${{ matrix.build-mode }}"
           changed-files-only: true
 
-      - name: Print the Sarif Report
+      - name: Extract Security 
+        if: env.skip != 'true'
         run: |
-          cat /home/runner/work/codeql/results/javascript.sarif
-
+          sarif_file=$(find /home/runner/_work/ep-sred/results -iname '*.sarif' | head -n 1)
+          if [ -n "$sarif_file" ]; then
+            echo "Printing the sarif file:"
+            head -n 1000 $sarif_file
+            echo "Extracting findings from: $sarif_file"
+            changed_files=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | tr -d '[]"' | tr ',' '\n')
+            jq -r --argjson changed_files "$(echo "$changed_files" | jq -R . | jq -s .)" '
+              def severity_map:
+                reduce (.runs[].tool.driver.rules[] // [])[] as $rule
+                  ({}; .[$rule.id] = {
+                    severity: ($rule.properties."problem.severity" // "UNKNOWN"),
+                    security_severity: ($rule.properties."security-severity" // null),
+                    precision: ($rule.properties."precision" // null)
+                  });
+              
+              .runs[].results[] |
+              select(.locations[].physicalLocation.artifactLocation.uri as $file |
+                     $changed_files | index($file) != null) |
+              {
+                rule: .ruleId,
+                message: .message.text,
+                file: .locations[].physicalLocation.artifactLocation.uri,
+                line: .locations[].physicalLocation.region.startLine,
+                severity: (severity_map[.ruleId].severity // "UNKNOWN"),
+                security_severity: (severity_map[.ruleId].security_severity // null),
+                precision: (severity_map[.ruleId].precision // null)
+              }' "$sarif_file" > parsed_results.json
+            cat parsed_results.json
+          else
+            echo "No SARIF report found."
+          fi
