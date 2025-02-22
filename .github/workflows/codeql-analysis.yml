@@ -42,6 +42,7 @@ jobs:
       - name: Display changed files
         run: |
           echo "Modified files: ${{ steps.changed-files.outputs.all_changed_files }}"
+
       - name: Skip analysis if no relevant files changed
         id: skip-analysis
         run: |
@@ -52,6 +53,7 @@ jobs:
             echo "No relevant files changed. Skipping analysis."
             echo "skip=true" >> $GITHUB_ENV
           fi
+
       - name: Filter files for CodeQL analysis
         id: filter-files
         run: |
@@ -64,12 +66,14 @@ jobs:
             echo "Files to analyze: $files_to_analyze"
             echo "FILES_TO_ANALYZE=$files_to_analyze" >> $GITHUB_ENV
           fi
+
       - name: Install Node.js (for JavaScript)
         if: matrix.language == 'javascript-typescript' && env.skip != 'true'
         run: |
           curl -sL https://deb.nodesource.com/setup_20.x | sudo -E bash -
           sudo apt-get install -y nodejs
           node -v
+
       - name: Initialize CodeQL
         if: env.skip != 'true'
         uses: github/codeql-action/init@v3
@@ -82,21 +86,17 @@ jobs:
         uses: github/codeql-action/analyze@v3
         with:
           category: "/language:${{ matrix.language }}-${{ matrix.build-mode }}"
-         
+
       - name: Extract Security Findings
         if: env.skip != 'true'
         run: |
           sarif_file=$(find /home/runner/work/codeql/results -iname '*.sarif' | head -n 1)
           if [ -n "$sarif_file" ]; then
-            echo "Printing $sarif_file output"
-            cat $sarif_file
+            echo "Printing SARIF file: $sarif_file"
+            cat "$sarif_file"
             echo "Extracting findings from: $sarif_file"
-            jq -r '.runs[].results[] | 
-            {rule: .ruleId, 
-             message: .message.text, 
-             file: .locations[].physicalLocation.artifactLocation.uri, 
-             line: .locations[].physicalLocation.region.startLine,
-             severity: (.properties."problem.severity" // .level // "UNKNOWN") }' "$sarif_file" > parsed_results.json
+            jq -r '.runs[] | .results[] | {rule: .ruleId, message: .message.text, file: (.locations[0].physicalLocation.artifactLocation.uri // "N/A"), line: (.locations[0].physicalLocation.region.startLine // "N/A"), severity: (.properties["problem.severity"] // .level // "UNKNOWN") }' "$sarif_file" > parsed_results.json
+            echo "Printing parsed_results.json:"
             cat parsed_results.json
           else
             echo "No SARIF report found."
