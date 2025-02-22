@@ -59,6 +59,8 @@ jobs:
         run: |
           grep_pattern=$(echo "${{ matrix.file-filter }}" | tr ' ' '\n' | sed 's/^/-e /' | tr '\n' ' ')
           files_to_analyze=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | tr -d '[]"' | tr ',' '\n' | grep $grep_pattern || true)
+          # Convert newline-separated file paths into a space-separated string.
+          files_to_analyze=$(echo "$files_to_analyze" | tr '\n' ' ')
           if [ -z "$files_to_analyze" ]; then
             echo "No relevant files found for analysis."
             echo "skip=true" >> $GITHUB_ENV
@@ -96,14 +98,19 @@ jobs:
             echo "Printing SARIF file preview (first 50 lines):"
             head -n 50 "$sarif_file"
             echo "Extracting findings from: $sarif_file"
-            # Use safe operators to avoid errors if a field is missing.
-            jq -r '(.runs[]? | .results[]? | {rule: .ruleId, message: .message.text, file: (.locations[0].physicalLocation.artifactLocation.uri // "N/A"), line: (.locations[0].physicalLocation.region.startLine // "N/A"), severity: (.properties["problem.severity"] // .level // "UNKNOWN") })' "$sarif_file" > parsed_results.json
-            if [ ! -s parsed_results.json ]; then
-              echo "No security findings found."
-            else
-              echo "Printing parsed_results.json:"
-              cat parsed_results.json
-            fi
+            jq -r 'if ((.runs[]? | .results?) | length) > 0 then 
+                      (.runs[]? | .results[]? | {
+                        rule: .ruleId, 
+                        message: .message.text, 
+                        file: (.locations[0].physicalLocation.artifactLocation.uri // "N/A"), 
+                        line: (.locations[0].physicalLocation.region.startLine // "N/A"), 
+                        severity: (.properties["problem.severity"] // .level // "UNKNOWN")
+                      })
+                   else 
+                      "No security findings found." 
+                   end' "$sarif_file" > parsed_results.json
+            echo "Printing parsed_results.json:"
+            cat parsed_results.json
           else
             echo "No SARIF report found."
           fi
