@@ -25,10 +25,10 @@ jobs:
         include:
           - language: java-kotlin
             build-mode: none
-            file-filter: '**/*.java **/*.kt'
+            file-filter: '.java .kt'
           - language: javascript-typescript
             build-mode: none
-            file-filter: '**/*.js **/*.ts'
+            file-filter: '.js .ts'
 
     steps:
       - name: Checkout repository
