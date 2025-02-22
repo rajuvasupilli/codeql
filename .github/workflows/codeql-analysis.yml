@@ -86,7 +86,7 @@ jobs:
       - name: Extract Security Findings
         if: env.skip != 'true'
         run: |
-          sarif_file=$(find /home/runner/_work/ep-sred/results -iname '*.sarif' | head -n 1)
+          sarif_file=$(find /home/runner/work/codeql//results -iname '*.sarif' | head -n 1)
           if [ -n "$sarif_file" ]; then
             echo "Extracting findings from: $sarif_file"
             jq -r '.runs[].results[] | 
