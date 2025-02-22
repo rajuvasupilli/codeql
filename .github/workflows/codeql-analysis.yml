@@ -104,14 +104,16 @@ jobs:
             echo "Printing mapping.json:"
             cat mapping.json
 
+            mapping=$(cat mapping.json)
+
             echo "Extracting findings from: $sarif_file"
-            jq -r 'if ((.runs[]? | .results?) | length) > 0 then 
-                      (.runs[]? | .results[]? | {
-                        rule: .ruleId, 
-                        message: .message.text, 
-                        file: (.locations[0].physicalLocation.artifactLocation.uri // "N/A"), 
-                        line: (.locations[0].physicalLocation.region.startLine // "N/A"), 
-                        severity: (.properties["problem.severity"] // .level // "UNKNOWN")
+            jq --argjson mapping "$mapping" -r 'if ((.runs[]? | .results?) | length) > 0 then 
+                      (.runs[]? | .results[]? | . as $r | {
+                        rule: $r.ruleId, 
+                        message: $r.message.text, 
+                        file: ($r.locations[0].physicalLocation.artifactLocation.uri // "N/A"), 
+                        line: ($r.locations[0].physicalLocation.region.startLine // "N/A"), 
+                        severity: ($mapping[$r.ruleId] // ($r.properties["problem.severity"] // $r.level // "UNKNOWN"))
                       })
                    else 
                       "No security findings found." 
