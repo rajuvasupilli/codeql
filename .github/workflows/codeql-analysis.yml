@@ -82,7 +82,7 @@ jobs:
         uses: github/codeql-action/analyze@v3
         with:
           category: "/language:${{ matrix.language }}-${{ matrix.build-mode }}"
-          changed-files-only: true
+          #changed-files-only: true
 
       - name: Extract Security 
         if: env.skip != 'true'
