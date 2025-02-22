@@ -99,11 +99,11 @@ jobs:
             echo "✅ Found SARIF file: $sarif_file"
           fi
           
-          echo "Listing SARIF files in results directory:"
-          ls -l /home/runner/work/codeql/results/
+          echo "Listing SARIF files in results directory..."
+          ls -lh /home/runner/work/codeql/results/
           
           echo "Printing SARIF file preview:"
-          jq '.' "$sarif_file" | head -n 50
+          jq '.' "$sarif_file" | head -n 100
           
           echo "Checking if SARIF contains findings..."
           results_count=$(jq '.runs[].results | length' "$sarif_file")
@@ -124,12 +124,12 @@ jobs:
           
           jq -r '
             .runs[].results? // [] | 
-            { 
-              rule: .ruleId, 
-              message: .message.text, 
-              file: .locations[].physicalLocation.artifactLocation.uri, 
-              line: .locations[].physicalLocation.region.startLine 
-            }
+            map({
+              rule: .ruleId,
+              message: .message.text,
+              file: .locations[].physicalLocation.artifactLocation.uri,
+              line: .locations[].physicalLocation.region.startLine
+            }) | select(length > 0)
           ' "$sarif_file" > parsed_results.json
           
           echo "Parsed results output:"
