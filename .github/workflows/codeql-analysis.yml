@@ -91,7 +91,7 @@ jobs:
         if: env.skip != 'true'
         run: |
           set -e
-		  ls -l /home/runner/work/codeql/results/*.sarif
+          ls -l /home/runner/work/codeql/results/
           sarif_file=$(find /home/runner/work/codeql/results -iname '*.sarif' | head -n 1)
           if [ ! -f "$sarif_file" ]; then
             echo "❌ SARIF file not found!"
