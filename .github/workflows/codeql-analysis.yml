@@ -42,7 +42,6 @@ jobs:
       - name: Display changed files
         run: |
           echo "Modified files: ${{ steps.changed-files.outputs.all_changed_files }}"
-
       - name: Skip analysis if no relevant files changed
         id: skip-analysis
         run: |
@@ -53,7 +52,6 @@ jobs:
             echo "No relevant files changed. Skipping analysis."
             echo "skip=true" >> $GITHUB_ENV
           fi
-
       - name: Filter files for CodeQL analysis
         id: filter-files
         run: |
@@ -66,14 +64,12 @@ jobs:
             echo "Files to analyze: $files_to_analyze"
             echo "FILES_TO_ANALYZE=$files_to_analyze" >> $GITHUB_ENV
           fi
-
       - name: Install Node.js (for JavaScript)
         if: matrix.language == 'javascript-typescript' && env.skip != 'true'
         run: |
           curl -sL https://deb.nodesource.com/setup_20.x | sudo -E bash -
           sudo apt-get install -y nodejs
           node -v
-
       - name: Initialize CodeQL
         if: env.skip != 'true'
         uses: github/codeql-action/init@v3
@@ -86,33 +82,39 @@ jobs:
         uses: github/codeql-action/analyze@v3
         with:
           category: "/language:${{ matrix.language }}-${{ matrix.build-mode }}"
+          #changed-files-only: true
 
       - name: Extract Security 
         if: env.skip != 'true'
         run: |
-          set -e
-          sarif_file=$(find /home/runner/work/codeql/results -iname '*.sarif' | head -n 1)
-          if [ ! -f "$sarif_file" ]; then
-            echo "❌ SARIF file not found!"
-            exit 1
+          sarif_file=$(find /home/runner/work/codeql/codeql/results -iname '*.sarif' | head -n 1)
+          if [ -n "$sarif_file" ]; then
+            echo "Printing the sarif file:"
+            head -n 200 $sarif_file
+            echo "Extracting findings from: $sarif_file"
+            changed_files=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | tr -d '[]"' | tr ',' '\n')
+            jq -r --argjson changed_files "$(echo "$changed_files" | jq -R . | jq -s .)" '
+              def severity_map:
+                reduce (.runs[].tool.driver.rules[] // [])[] as $rule
+                  ({}; .[$rule.id] = {
+                    severity: ($rule.properties."problem.severity" // "UNKNOWN"),
+                    security_severity: ($rule.properties."security-severity" // null),
+                    precision: ($rule.properties."precision" // null)
+                  });
+              
+              .runs[].results[] |
+              select(.locations[].physicalLocation.artifactLocation.uri as $file |
+                     $changed_files | index($file) != null) |
+              {
+                rule: .ruleId,
+                message: .message.text,
+                file: .locations[].physicalLocation.artifactLocation.uri,
+                line: .locations[].physicalLocation.region.startLine,
+                severity: (severity_map[.ruleId].severity // "UNKNOWN"),
+                security_severity: (severity_map[.ruleId].security_severity // null),
+                precision: (severity_map[.ruleId].precision // null)
+              }' "$sarif_file" > parsed_results.json
+            cat parsed_results.json
           else
-            echo "✅ Found SARIF file: $sarif_file"
+            echo "No SARIF report found."
           fi
-          
-          echo "Printing SARIF file preview:"
-          cat "$sarif_file" | head -n 50  # Print first 50 lines
-          
-          echo "Extracting findings from: $sarif_file"
-          
-          changed_files=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | tr -d '[]"' | tr ',' '\n')
-          echo "Changed files list:"
-          echo "$changed_files"
-          
-          jq -r --argjson changed_files "$(echo "$changed_files" | jq -R . | jq -s .)" '
-            .runs[].results[] |
-            { rule: .ruleId, message: .message.text, file: .locations[].physicalLocation.artifactLocation.uri }
-          ' "$sarif_file" > parsed_results.json
-          
-          echo "Parsed results output:"
-          cat parsed_results.json
-
