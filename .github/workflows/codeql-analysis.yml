@@ -95,8 +95,15 @@ jobs:
           sarif_file=$(find /home/runner/work/codeql/results -iname '*.sarif' | head -n 1)
           if [ -n "$sarif_file" ]; then
             echo "✅ Found SARIF file: $sarif_file"
-            echo "Printing SARIF file preview (first 50 lines):"
-            head -n 50 "$sarif_file"
+            
+            echo "Extracting key-value mapping (id : problem.severity) from SARIF..."
+            jq -r '[.runs[]?.results[]? 
+              | select(.properties and .properties.id and .properties["problem.severity"])
+              | {(.properties.id): .properties["problem.severity"]}
+            ] | add' "$sarif_file" > mapping.json
+            echo "Printing mapping.json:"
+            cat mapping.json
+
             echo "Extracting findings from: $sarif_file"
             jq -r 'if ((.runs[]? | .results?) | length) > 0 then 
                       (.runs[]? | .results[]? | {
