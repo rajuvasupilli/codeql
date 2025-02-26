@@ -149,3 +149,93 @@ Choosing between GKE Standard and GKE Autopilot depends on our use case:
 
 If our workloads require high customization, privileged access, or cost optimization, GKE Standard would be the better choice. 
 However, if our primary focus is on reducing operational overhead and simplifying Kubernetes management, GKE Autopilot is the way to go.
+
+### Observability in GKE
+
+## How Does Observability Work?
+
+Observability in Google Kubernetes Engine (GKE) Standard and GKE Autopilot involves monitoring, logging, and tracing the performance and health of your applications and infrastructure. Both provide tools and integrations to help achieve observability, but GKE Autopilot has some limitations due to its managed nature.
+
+## Observability in GKE Standard
+
+# Monitoring:
+
+- Google Cloud Operations Suite (formerly Stackdriver) for collecting metrics, setting alerts, and creating dashboards.
+
+- Prometheus: Deployable in-cluster or via Google Cloud Managed Service for Prometheus.
+
+- Custom Metrics: Applications can expose custom metrics for Cloud Monitoring.
+
+# Logging:
+
+- Cloud Logging: Automatically collects control plane and application logs.
+
+- Fluentd: Used as a logging agent to forward logs to Cloud Logging.
+
+# Tracing:
+
+- Cloud Trace for distributed tracing.
+
+- OpenTelemetry for additional tracing capabilities.
+
+## Observability in GKE Autopilot
+
+- Similar tools as GKE Standard, but with fewer configuration options.
+
+- Google manages logging agents, monitoring configurations, and ensures seamless log collection.
+
+- Logs and metrics are automatically collected and sent to Google Cloud Logging.
+
+## Key Differences
+
+| Feature             | GKE Standard                        | GKE Autopilot                    |
+|---------------------|-------------------------------------|----------------------------------|
+| Node Management     | Customizable logging agents         | Google-managed agents            |
+| Resource Allocation | Fully configurable                  | Automatically managed            |
+| Cost                | Cost based on provisioned resources | Cost based on consumed resources |
+
+## Best Practices
+
+- Use Managed Services: Leverage Google Cloud Managed Service for Prometheus and Cloud Logging.
+
+- Standardize Observability: Use consistent labels, metrics, and logging formats across clusters.
+
+- Monitor Resource Usage: Optimize monitoring configurations to manage costs efficiently.
+
+### Logs and Metrics Processed in GKE
+
+## Logs
+
+# Control Plane Logs:
+
+- API Server Logs, Scheduler Logs, Controller Manager Logs, etcd Logs.
+
+# Node Logs:
+
+- Kubelet Logs, Container Runtime Logs.
+
+# Application Logs:
+
+- Stdout/Stderr Logs, Custom Log Files.
+
+## Metrics
+
+# Control Plane Metrics:
+
+- API Server Metrics, Scheduler Metrics, Controller Manager Metrics.
+
+# Node Metrics:
+
+- Kubelet Metrics, Node Resource Metrics.
+
+- Application Metrics:
+
+- Custom Metrics collected via Prometheus or OpenTelemetry.
+
+## Log Transfer and Agents in GKE
+
+# Log Transfer Process
+
+- Application Logs are captured via container runtimes (e.g., containerd) and forwarded by logging agents.
+
+- Logs are aggregated and exported to Google Cloud Logging via the logging agent.
