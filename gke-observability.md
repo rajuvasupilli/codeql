@@ -16,10 +16,11 @@ Google Kubernetes Engine (GKE) offers two modes of operation: **Standard** and *
 
 **Pros and Cons**
 ```markdown
-| Feature              | GKE Standard                     | GKE Autopilot                     |
-|----------------------|----------------------------------|-----------------------------------|
-| **Pros**             | Full control over infrastructure | Hands-off cluster management      |
-| **Cons**             | Higher operational overhead      | Less flexibility in customization |
+| Feature      | GKE Standard                                       | GKE Autopilot                               |
+|--------------|----------------------------------------------------|---------------------------------------------|
+| Pros         | Full control over infrastructure                   | Hands-off cluster management                |
+| Cons         | Higher operational overhead                        | Less flexibility in customization           |
+| Limitations  | Requires deep Kubernetes expertise, manual updates | Limited customization, no custom node pools |
 ```
 
 ## 2. Node Management
@@ -34,10 +35,11 @@ Google Kubernetes Engine (GKE) offers two modes of operation: **Standard** and *
 
 **Pros and Cons**
 ```markdown
-| Feature  | GKE Standard                            |  GKE Autopilot                 |
-|----------|-----------------------------------------|--------------------------------|
-| **Pros** | Customizable node configurations        | Automated node provisioning    |
-| **Cons** | Manual effort required for node scaling | No control over node selection |
+| Feature     | GKE Standard                            |  GKE Autopilot                                                             |
+|-------------|-----------------------------------------|----------------------------------------------------------------------------|
+| Pros        | Customizable node configurations        | Automated node provisioning                                                |
+| Cons        | Manual effort required for node scaling | No control over node selection                                             |
+| Limitations | Requires manual scaling and monitoring  | No direct control over node types, autoscaling behavior, or node placement |
 ```
 
 ## 3. Cost Model
@@ -52,10 +54,11 @@ Google Kubernetes Engine (GKE) offers two modes of operation: **Standard** and *
 
 **Pros and Cons**
 ```markdown
-| Feature  | GKE Standard                                          | GKE Autopilot                      |
-|----------|-------------------------------------------------------|------------------------------------|
-| **Pros** | More cost-efficient for high workloads                | Pay-as-you-use pricing             |
-| **Cons** | Potential cost inefficiencies for underutilized nodes | Slightly higher per-resource costs |
+| Feature      | GKE Standard                                          | GKE Autopilot                                                   |
+|--------------|-------------------------------------------------------|-----------------------------------------------------------------|
+| Pros         | More cost-efficient for high workloads                | Pay-as-you-use pricing                                          |
+| Cons         | Potential cost inefficiencies for underutilized nodes | Slightly higher per-resource costs                              |
+| Limitations  | Requires constant cost optimization                   | Higher per-resource costs, limited ability to optimize spending |
 ```
 
 ## 4. Workload Flexibility
@@ -70,10 +73,11 @@ Google Kubernetes Engine (GKE) offers two modes of operation: **Standard** and *
 
 **Pros and Cons**
 ```markdown
-| Feature  | GKE Standard                     | GKE Autopilot                   |
-|----------|----------------------------------|---------------------------------|
-| **Pros** | Supports all Kubernetes features | Optimized for simplicity        |
-| **Cons** | Requires manual optimization     | Limited workload configurations |
+| Feature     | GKE Standard                          | GKE Autopilot                                                                          |
+|-------------|---------------------------------------|----------------------------------------------------------------------------------------|
+| Pros        | Supports all Kubernetes features      | Optimized for simplicity                                                               |
+| Cons        | Requires manual optimization          | Limited workload configurations                                                        |
+| Limitations | Requires expertise for best practices | No privileged workloads, limited ability to customize networking and security policies |
 ```
 
 ## 5. Operational Overhead
@@ -88,10 +92,11 @@ Google Kubernetes Engine (GKE) offers two modes of operation: **Standard** and *
 
 **Pros and Cons**
 ```markdown
-| Feature  | GKE Standard                            | GKE Autopilot                        |
-|----------|-----------------------------------------|--------------------------------------|
-| **Pros** | Full control over operations            | Reduced operational overhead         |
-| **Cons** | Requires dedicated Kubernetes expertise | Less control over cluster operations |
+| Feature     | GKE Standard                            | GKE Autopilot                                       |
+|-------------|-----------------------------------------|-----------------------------------------------------|
+| Pros        | Full control over operations            | Reduced operational overhead                        |
+| Cons        | Requires dedicated Kubernetes expertise | Less control over cluster operations                |
+| Limitations | Requires continuous management efforts  | No ability to intervene in cluster-level operations |
 ```
 
 ## 6. Use Cases
@@ -106,10 +111,11 @@ Google Kubernetes Engine (GKE) offers two modes of operation: **Standard** and *
 
 **Pros and Cons**
 ```markdown
-| Feature  | GKE Standard                  | GKE Autopilot                             |
-|----------|-------------------------------|-------------------------------------------|
-| **Pros** | Ideal for complex deployments | Best for hands-off operations             |
-| **Cons** | Requires ongoing maintenance  | Not ideal for highly customized workloads |
+| Feature     | GKE Standard                            | GKE Autopilot                                           |
+|-------------|-----------------------------------------|---------------------------------------------------------|
+| Pros        | Ideal for complex deployments           | Best for hands-off operations                           |
+| Cons        | Requires ongoing maintenance            | Not ideal for highly customized workloads               |
+| Limitations | High learning curve, resource-intensive | Limited flexibility, restricted advanced configurations |
 ```
 
 ## 7. Location Availability
@@ -131,3 +137,15 @@ We can check the below links for the latest availability of the GKE Flavors
 | **Operational Overhead** | Higher                  | Lower                             |
 | **Ideal For**            | Advanced users          | Hands-off management              |
 ```
+
+
+### Conclusion: GKE Standard vs. Autopilot
+
+Choosing between GKE Standard and GKE Autopilot depends on our use case:
+
+- GKE Standard is better suited for organizations needing full control over infrastructure, including node management, custom configurations, and advanced networking.
+
+- GKE Autopilot is ideal for teams seeking a hassle-free Kubernetes experience, with automated provisioning and management at the cost of flexibility and customization.
+
+If our workloads require high customization, privileged access, or cost optimization, GKE Standard would be the better choice. 
+However, if our primary focus is on reducing operational overhead and simplifying Kubernetes management, GKE Autopilot is the way to go.
