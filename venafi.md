@@ -8,7 +8,7 @@ This Terraform module automates the process of requesting, creating, and managin
 - Supports authentication via OAuth for secure API access.
 - Dynamically generates certificates based on provided environment variables.
 - Provides an option to verify SSL certificates during API requests.
-- Stores the generated certificate in a local file for further use.
+- Venafi stores and pushes the generated certificate into AWS ACM.
 
 ## Use Cases
 This module can be used for:
