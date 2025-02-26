@@ -16,28 +16,28 @@ This Terraform module provisions an AWS SFTP Transfer Family server with configu
    -  Automates the deployment of AWS Transfer Family SFTP servers with configurable options for identity provider type, endpoint type, and security policies.
 
 2. Secure File Transfers
--  Enables organizations to transfer files securely using AWS SFTP with FIPS-compliant security policies and IAM role-based access control.
+   -  Enables organizations to transfer files securely using AWS SFTP with FIPS-compliant security policies and IAM role-based access control.
 
 3. Multi-User Management
-- Supports multiple users with individual roles and permissions, ensuring controlled access to home directories based on logical or path-based configurations.
-Custom Domain Integration with Route 53
+  - Supports multiple users with individual roles and permissions, ensuring controlled access to home directories based on logical or path-based configurations.
 
-Allows the use of custom hostnames for SFTP servers by provisioning Route 53 CNAME records dynamically.
-AWS Directory Service Authentication
+4. Custom Domain Integration with Route 53
+   - Allows the use of custom hostnames for SFTP servers by provisioning Route 53 CNAME records dynamically.
 
-Supports integration with AWS Directory Service for centralized user authentication and access control.
-Automated Key Management for SSH Authentication
+5. AWS Directory Service Authentication
+   - Supports integration with AWS Directory Service for centralized user authentication and access control.
 
-Provides options for enabling SSH key-based authentication, including automatic key generation or using existing SSH keys.
-Custom Home Directory Mapping
+6. Automated Key Management for SSH Authentication
+   - Provides options for enabling SSH key-based authentication, including automatic key generation or using existing SSH keys.
 
-Supports logical directory mapping for different SFTP users, ensuring better organization of file transfers.
-Secure Logging and Compliance
+7. Custom Home Directory Mapping
+   - Supports logical directory mapping for different SFTP users, ensuring better organization of file transfers.
 
-Automatically configures logging to AWS CloudWatch, enabling audit trails for security and compliance requirements (e.g., HIPAA, PCI-DSS).
-Flexible Network Deployment
+8. Secure Logging and Compliance
+   - Automatically configures logging to AWS CloudWatch, enabling audit trails for security and compliance requirements (e.g., HIPAA, PCI-DSS).
 
-Supports deployment in a private VPC with custom subnet and security group configurations to enhance security and isolation.
+9. Flexible Network Deployment
+   - Supports deployment in a private VPC with custom subnet and security group configurations to enhance security and isolation.
 
 ## Prerequisites
 - An AWS account with necessary permissions to create and manage Transfer Family resources
