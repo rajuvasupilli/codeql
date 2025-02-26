@@ -19,7 +19,7 @@ This Terraform module provisions an AWS SFTP Transfer Family server with configu
    -  Enables organizations to transfer files securely using AWS SFTP with FIPS-compliant security policies and IAM role-based access control.
 
 3. Multi-User Management
-  - Supports multiple users with individual roles and permissions, ensuring controlled access to home directories based on logical or path-based configurations.
+   - Supports multiple users with individual roles and permissions, ensuring controlled access to home directories based on logical or path-based configurations.
 
 4. Custom Domain Integration with Route 53
    - Allows the use of custom hostnames for SFTP servers by provisioning Route 53 CNAME records dynamically.
