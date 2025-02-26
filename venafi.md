@@ -64,11 +64,24 @@ password      = "masked"  # Replace with the actual password or use a secrets ma
 ```
 
 ## How It Works
-1. **OAuth Authentication**: The `cert_util.py` script authenticates with Venafi using OAuth.
-2. **Folder Validation**: Checks if the AWS account folder structure exists in Venafi; creates it if necessary.
-3. **Certificate Request**: Requests a certificate for the specified hostname.
-4. **Certificate Storage**: The generated certificate is stored in a local file.
-5. **Certificate Association**: Associates the certificate with the appropriate application in Venafi.
+1. **OAuth Authentication**: The `cert_util.py` script authenticates with Venafi using OAuth, obtaining an access token for API requests.
+2. **AWS Folder Path Validation**:
+   - Checks if the AWS account folder exists under `\\VED\\Policy\\Internal Certificates\\Amazon Web Services Accounts\\Subscriptions\\AWS-{account_id}`.
+   - If not found, it creates the folder for AWS certificate management.
+3. **Certificate Folder Validation**:
+   - Checks if the certificate storage folder exists at `\\VED\\Policy\\Internal Certificates\\Amazon Web Services Accounts\\Subscriptions\\AWS-{account_id}\\Certificates`.
+   - If missing, it creates the folder to store issued certificates.
+4. **Certificate Request Validation**:
+   - Ensures that the certificate object exists for the specified hostname.
+   - If the certificate object is missing, it creates a new entry.
+5. **Certificate Request Submission**:
+   - Sends a certificate request to Venafi for approval.
+6. **Certificate Retrieval**:
+   - Once the request is approved, retrieves the issued certificate from Venafi.
+7. **Storage and Logging**:
+   - Stores the retrieved certificate in a local file for further use.
+   - Logs each step for audit and debugging purposes.
+
 
 ## Notes
 - Ensure that the `cert_util.py` script has the correct permissions to execute.
