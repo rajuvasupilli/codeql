@@ -71,14 +71,14 @@ Both **GKE Standard** and **GKE Autopilot** are available in most Google Cloud P
 ## Summary Table
 
 ```markdown
-| Feature                  | GKE Standard | GKE Autopilot |
-|--------------------------|--------------|---------------|
-| **Cluster Management**   | User-managed | Fully managed by Google |
-| **Node Management**      | Configurable node pools | Google-managed nodes |
-| **Cost Model**           | Pay for node resources | Pay for Pod resources |
-| **Workload Flexibility** | Full control | Optimized for stateless workloads |
-| **Operational Overhead** | Higher | Lower |
-| **Ideal For**            | Advanced users | Hands-off management |
+| Feature                      | GKE Standard                  | GKE Autopilot                     |
+|------------------------------|-------------------------------|-----------------------------------|
+| **Cluster Management**       | User-managed                  | Fully managed by Google           |
+| **Node Management**          | Configurable node pools       | Google-managed nodes              |
+| **Cost Model**               | Pay for node resources        | Pay for Pod resources             |
+| **Workload Flexibility**     | Full control                  | Optimized for stateless workloads |
+| **Operational Overhead**     | Higher                        | Lower                             |
+| **Ideal For**                | Advanced users                | Hands-off management              |
 ```
 
 ## Which Should You Choose?
