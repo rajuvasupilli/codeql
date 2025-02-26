@@ -13,7 +13,7 @@ This Terraform module provisions an AWS SFTP Transfer Family server with configu
 
 ## Use Cases
 1. Provisioning AWS SFTP Servers
--  Automates the deployment of AWS Transfer Family SFTP servers with configurable options for identity provider type, endpoint type, and security policies.
+   -  Automates the deployment of AWS Transfer Family SFTP servers with configurable options for identity provider type, endpoint type, and security policies.
 
 2. Secure File Transfers
 -  Enables organizations to transfer files securely using AWS SFTP with FIPS-compliant security policies and IAM role-based access control.
