@@ -347,25 +347,25 @@ To capture control plane logs, we would need to:
 1. Enable Cloud Logging and Export Control Plane Logs
 
 Ensure that Cloud Logging is enabled for your GKE cluster:
-
+```
 gcloud container clusters update CLUSTER_NAME \
     --logging=SYSTEM,WORKLOAD
-
+```
 Then, create a log sink to export control plane logs:
-
+```
 gcloud logging sinks create control-plane-logs-sink \
     --destination=pubsub.googleapis.com/projects/${PROJECT_ID}/topics/control-plane-logs-topic \
     --log-filter='resource.type="k8s_cluster"'
-
+```
 2. Deploy a Pub/Sub Subscriber to Process Logs
 
 ### Create a Pub/Sub subscription to receive logs:
-
+```
 gcloud pubsub subscriptions create control-plane-logs-sub \
     --topic=control-plane-logs-topic
-
+```
 Then, deploy a Fluent Bit instance to subscribe and forward logs:
-
+```
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -387,11 +387,11 @@ spec:
         env:
         - name: PUBSUB_SUBSCRIPTION
           value: "control-plane-logs-sub"
-
+```
 3. Forward Logs to Prometheus
 
 Modify Fluent Bit's configuration to process Cloud Logging logs and expose them as Prometheus metrics:
-
+```
 [INPUT]
     Name        pubsub
     Subscription control-plane-logs-sub
@@ -401,14 +401,14 @@ Modify Fluent Bit's configuration to process Cloud Logging logs and expose them 
     Match       *
     Host        0.0.0.0
     Port        2020
-
+```
 Finally, configure Prometheus to scrape logs from Fluent Bit:
-
+```
 scrape_configs:
   - job_name: 'fluent-bit-control-plane'
     static_configs:
       - targets: ['fluent-bit-control-plane.logging.svc.cluster.local:2020']
-
+```
 This setup ensures that the Control Plane logs from Google Cloud Logging are extracted, processed, and forwarded to Prometheus using Fluent Bit. 
 
 
