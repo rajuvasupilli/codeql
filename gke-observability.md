@@ -337,11 +337,12 @@ scrape_configs:
 
 The same process can be followed to capture and push the data plane/node logs (such as system logs and kubelet logs) by configuring it to read from /var/log/syslog, /var/log/messages, and /var/log/kubelet.log.
 
+## Send Control Plane logs to Prometheus:
 The Control plane logs (API server, scheduler, controller manager, etc.) are managed by Google Cloud Logging and are not stored on the nodes themselves.
 
 To capture control plane logs, we would need to:
 
-Enable Google Cloud Logging for GKE and use Google Cloud's Logging API to extract and forward logs to Prometheus.
+### Enable Google Cloud Logging for GKE and use Google Cloud's Logging API to extract and forward logs to Prometheus.
 
 1. Enable Cloud Logging and Export Control Plane Logs
 
@@ -358,7 +359,7 @@ gcloud logging sinks create control-plane-logs-sink \
 
 2. Deploy a Pub/Sub Subscriber to Process Logs
 
-Create a Pub/Sub subscription to receive logs:
+### Create a Pub/Sub subscription to receive logs:
 
 gcloud pubsub subscriptions create control-plane-logs-sub \
     --topic=control-plane-logs-topic
