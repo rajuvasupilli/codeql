@@ -232,9 +232,7 @@ Observability in Google Kubernetes Engine (GKE) Standard and GKE Autopilot invol
 
 - Custom Metrics collected via Prometheus or OpenTelemetry.
 
-## Log Transfer and Agents in GKE
-
-# Log Transfer Process
+# Log Transfer Process and Agents in GKE
 
 - Application Logs are captured via container runtimes (e.g., containerd) and forwarded by logging agents.
 
