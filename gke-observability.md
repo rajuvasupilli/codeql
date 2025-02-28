@@ -232,55 +232,63 @@ Observability in Google Kubernetes Engine (GKE) Standard and GKE Autopilot invol
 
 - Custom Metrics collected via Prometheus or OpenTelemetry.
 
-# Log Transfer Process and GKE Agents
+# GKE Logging and Metrics Collection with Fluentd and Prometheus
 
-# How Google Cloud Logging Agents Pick Up Logs in GKE
+## 1. How Google Cloud Logging Agents Pick Up Logs in GKE
 
-## 1. Application Logs (STDOUT/STDERR)
-- When an application running in a GKE pod writes logs to `stdout` or `stderr`, these logs are captured by the container runtime (e.g., `containerd`).
-- The container runtime stores logs in `/var/log/containers/*.log`, which are symbolic links to `/var/log/pods/<namespace>_<pod_name>_<container_id>/*.log`.
-- The GKE Logging Agent (Fluentd-based) runs as a DaemonSet on every node.
-- Fluentd reads logs from `/var/log/containers/*.log` and sends them to Google Cloud Logging.
+### 1.1 Application Logs (STDOUT/STDERR)
+- Applications running in GKE pods write logs to **stdout** or **stderr**.
+- These logs are captured by the container runtime (**containerd**).
+- Log files are stored in:  
+  - `/var/log/containers/*.log` → Symlinks to `/var/log/pods/<namespace>_<pod_name>_<container_id>/*.log`
+- Fluentd runs as a **DaemonSet** on every node.
+- Fluentd reads logs from `/var/log/containers/*.log` and sends them to **Google Cloud Logging**.
 
-## 2. Node Logs (System Logs)
-- Logs from system components like Kubelet, Container Network Interface (CNI), and CoreDNS are written to:
+### 1.2 Node Logs (System Logs)
+- System components like **Kubelet, CNI, CoreDNS** generate logs.
+- Log file locations:  
   - `/var/log/syslog` or `/var/log/messages`
   - `/var/log/kubelet.log`
-- The GKE Logging Agent (Fluentd) running on each node continuously tails these files and sends them to Google Cloud Logging.
+- Fluentd tails these logs and forwards them to **Google Cloud Logging**.
 
-## 3. Control Plane Logs
-- GKE’s control plane components (API Server, Scheduler, Controller Manager, etc.) do not run on worker nodes. Instead, they run on a managed control plane.
-- Google Cloud Logging automatically collects these logs from the control plane and makes them available in Cloud Logging.
-- If logs need to be forwarded elsewhere, a Cloud Logging Sink can export them to Pub/Sub, from where Fluentd or another processor can forward them.
-
----
-
-## Log Paths and Fluentd Data Destination Table
-
-| **Log Category** | **File Location** | **Data Destination** | **Correct Grouping** | **Destination Path in Cloud Logging** |
-|------------------|------------------|----------------------|----------------------|--------------------------------------|
-| **Application Logs (STDOUT/STDERR)** | `/var/log/containers/*.log` | Fluentd | Grouped by namespace, pod name, container name | `projects/${PROJECT_ID}/logs/${CLUSTER_NAME}/containers/${NAMESPACE_NAME}` |
-| **Pod Logs (Persistent Logs in Volumes)** | `/var/log/pods/<namespace>_<pod_name>_<container_id>/*.log` | Fluentd | Grouped by namespace, pod name | `projects/${PROJECT_ID}/logs/${CLUSTER_NAME}/pods/${NAMESPACE_NAME}` |
-| **Kubelet Logs** | `/var/log/kubelet.log` | Fluentd | Grouped by node name | `projects/${PROJECT_ID}/logs/${CLUSTER_NAME}/system/kubelet` |
-| **Container Runtime Logs (containerd)** | `/var/log/containerd.log` | Fluentd | Grouped by node name | `projects/${PROJECT_ID}/logs/${CLUSTER_NAME}/system/containerd` |
-| **CoreDNS Logs** | `/var/log/kube-system/coredns.log` | Fluentd | Grouped by namespace and component name | `projects/${PROJECT_ID}/logs/${CLUSTER_NAME}/system/coredns` |
-| **Container Network Interface (CNI) Logs** | `/var/log/cni.log` | Fluentd | Grouped by node name and network component | `projects/${PROJECT_ID}/logs/${CLUSTER_NAME}/system/cni` |
-| **System Logs (OS-Level Logs)** | `/var/log/syslog` or `/var/log/messages` | Fluentd | Grouped by node name | `projects/${PROJECT_ID}/logs/${CLUSTER_NAME}/system/syslog` |
-| **Audit Logs** | `/var/log/audit.log` | Fluentd | Grouped by node name and event type | `projects/${PROJECT_ID}/logs/${CLUSTER_NAME}/system/audit` |
-| **Control Plane Logs (API Server, Scheduler, Controller Manager, etc.)** | Managed by Google Cloud Logging | Fluentd via Pub/Sub Export | Grouped by control plane component | `projects/${PROJECT_ID}/logs/${CLUSTER_NAME}/control-plane/${COMPONENT}` |
+### 1.3 Control Plane Logs
+- **Control plane** components (API Server, Scheduler, Controller Manager, etc.) are managed by Google.
+- These logs are automatically collected by **Cloud Logging**.
+- If logs need to be forwarded to another system, a **Cloud Logging Sink** can export them to **Pub/Sub**, where Fluentd or other processors can process them.
 
 ---
 
-## How Fluentd Works in GKE
-- Fluentd runs as a **DaemonSet** on all nodes in the cluster.
-- It collects logs from `/var/log/containers`, `/var/log/syslog`, `/var/log/kubelet.log`, and other locations.
-- The logs are then **structured and pushed** to Google Cloud Logging via the `fluent-plugin-google-cloud` plugin.
-- If exporting to another system (e.g., Elasticsearch, Prometheus, or another log sink), Fluentd can be configured to forward logs accordingly.
+## 2. Log Paths and Fluentd Data Destination Table
+
+| Log Category                                  | File Location                                             | Data Destination | Grouping                                      | Destination Path in Cloud Logging                                   |
+|-----------------------------------------------|-----------------------------------------------------------|------------------|-----------------------------------------------|---------------------------------------------------------------------|
+| **Application Logs (STDOUT/STDERR)**         | `/var/log/containers/*.log`                              | Fluentd          | Grouped by namespace, pod name, container    | `projects/${PROJECT_ID}/logs/${CLUSTER_NAME}/containers/${NAMESPACE_NAME}` |
+| **Pod Logs (Persistent Logs in Volumes)**    | `/var/log/pods/<namespace>_<pod_name>_<container_id>/*.log` | Fluentd          | Grouped by namespace, pod name               | `projects/${PROJECT_ID}/logs/${CLUSTER_NAME}/pods/${NAMESPACE_NAME}` |
+| **Kubelet Logs**                             | `/var/log/kubelet.log`                                   | Fluentd          | Grouped by node name                         | `projects/${PROJECT_ID}/logs/${CLUSTER_NAME}/system/kubelet`       |
+| **Container Runtime Logs (containerd)**      | `/var/log/containerd.log`                                | Fluentd          | Grouped by node name                         | `projects/${PROJECT_ID}/logs/${CLUSTER_NAME}/system/containerd`    |
+| **CoreDNS Logs**                             | `/var/log/kube-system/coredns.log`                      | Fluentd          | Grouped by namespace and component name      | `projects/${PROJECT_ID}/logs/${CLUSTER_NAME}/system/coredns`       |
+| **Container Network Interface (CNI) Logs**   | `/var/log/cni.log`                                      | Fluentd          | Grouped by node name and network component   | `projects/${PROJECT_ID}/logs/${CLUSTER_NAME}/system/cni`           |
+| **System Logs (OS-Level Logs)**              | `/var/log/syslog` or `/var/log/messages`                 | Fluentd          | Grouped by node name                         | `projects/${PROJECT_ID}/logs/${CLUSTER_NAME}/system/syslog`        |
+| **Audit Logs**                               | `/var/log/audit.log`                                    | Fluentd          | Grouped by node name and event type          | `projects/${PROJECT_ID}/logs/${CLUSTER_NAME}/system/audit`         |
+| **Control Plane Logs**                       | Managed by Google Cloud Logging                         | Fluentd via Pub/Sub Export | Grouped by control plane component | `projects/${PROJECT_ID}/logs/${CLUSTER_NAME}/control-plane/${COMPONENT}` |
 
 ---
 
-## Fluentd Configuration in GKE
-Below is a sample **Fluentd configuration file** that GKE Logging Agent uses to collect logs.
+## 3. Transforming Logs into Metrics for Prometheus
+
+### 3.1 How Fluentd Extracts Metrics from Logs
+Fluentd can **convert logs into structured metrics** using:  
+- `fluent-plugin-prometheus`
+- `fluentd-metrics-filter`
+- **Custom log parsing rules** for extracting key metrics.
+
+#### Example:
+- **Application Logs:** Error rates, latency, request counts.
+- **Node Logs:** CPU, memory, disk, network errors.
+- **Control Plane Logs:** API server request counts, scheduler latency.
+
+### 3.2 Fluentd Configuration for Metric Extraction
+Below is a **Fluentd configuration** that extracts metrics from logs:
 
 ```xml
 <source>
@@ -292,22 +300,6 @@ Below is a sample **Fluentd configuration file** that GKE Logging Agent uses to 
   time_format %Y-%m-%dT%H:%M:%S.%NZ
 </source>
 
-<source>
-  @type tail
-  path /var/log/kubelet.log
-  pos_file /var/log/fluentd-kubelet.pos
-  tag kubelet
-  format none
-</source>
-
-<source>
-  @type tail
-  path /var/log/syslog
-  pos_file /var/log/fluentd-syslog.pos
-  tag system
-  format none
-</source>
-
 <filter kubernetes.**>
   @type parser
   key_name log
@@ -315,8 +307,71 @@ Below is a sample **Fluentd configuration file** that GKE Logging Agent uses to 
 </filter>
 
 <match kubernetes.**>
-  @type google_cloud
-  project ${PROJECT_ID}
-  resource kubernetes_container
-  flush_interval 5s
+  @type prometheus
+  <metric>
+    name http_requests_total
+    type counter
+    desc "Total HTTP requests"
+    labels pod, container, namespace
+  </metric>
 </match>
+```
+
+---
+
+## 4. Exposing Metrics to Prometheus
+
+### 4.1 Fluentd as a Metrics Exporter
+Fluentd exposes metrics in **Prometheus format** on `/metrics` endpoint.  
+- **Each node runs Fluentd as a DaemonSet**.
+- Fluentd **parses logs, extracts metrics, and exposes them** on port `24231`.
+
+### 4.2 Prometheus Scraping Fluentd
+Prometheus scrapes Fluentd’s metrics at:
+```yaml
+scrape_configs:
+  - job_name: 'fluentd'
+    static_configs:
+      - targets: ['fluentd.monitoring.svc.cluster.local:24231']
+    metrics_path: /metrics
+```
+
+---
+
+## 5. Control Plane Logs → Metrics → Prometheus
+
+### 5.1 Google Cloud Managed Prometheus
+- Control Plane logs (API Server, Scheduler) **do not reside on worker nodes**.
+- **Google Cloud Logging → Cloud Monitoring → Prometheus**.
+- Use `stackdriver-prometheus-exporter` to **convert logs into Prometheus metrics**.
+
+#### Export Control Plane Logs to Prometheus
+```yaml
+rules:
+- record: apiserver_request_total
+  expr: |
+    rate(container_fs_writes_total{container="kube-apiserver"}[5m])
+- record: scheduler_latency_seconds
+  expr: |
+    histogram_quantile(0.99, sum(rate(container_cpu_usage_seconds_total{container="kube-scheduler"}[5m])) by (le))
+```
+
+---
+
+## 6. Summary of GKE Logging & Prometheus Metrics
+
+| Component        | Fluentd Source        | Metrics Extracted | Prometheus Integration |
+|-----------------|----------------------|-------------------|------------------------|
+| Application Logs | `/var/log/containers` | Request counts, error rates | Fluentd `/metrics` → Prometheus |
+| Node Logs       | `/var/log/syslog`, `/var/log/kubelet.log` | CPU, memory, network stats | Fluentd `/metrics` → Prometheus |
+| Control Plane   | Managed by Cloud Logging | API requests, scheduler latency | Stackdriver Exporter → Prometheus |
+
+---
+
+## 7. Conclusion 🚀
+1. **Fluentd collects logs** from application, node, and system logs.  
+2. **Fluentd extracts key metrics** using Prometheus plugins.  
+3. **Prometheus scrapes Fluentd’s `/metrics`** endpoint.  
+4. **Control plane metrics** are collected via **Google Cloud Managed Prometheus**.  
+5. **Structured logs and metrics** are available for monitoring & alerting.
+
