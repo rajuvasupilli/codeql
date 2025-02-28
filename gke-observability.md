@@ -247,8 +247,10 @@ Observability in Google Kubernetes Engine (GKE) Standard and GKE Autopilot invol
 ### 1.2 Node Logs (System Logs)
 - System components like **Kubelet, CNI, CoreDNS** generate logs.
 - Log file locations:  
-  - `/var/log/syslog` or `/var/log/messages`
-  - `/var/log/kubelet.log`
+  - `/var/log/syslog` or `/var/log/messages -> System Logs`
+  - `/var/log/kubelet.log                   -> Kubelet Log`
+  - `/var/log/kube-system/coredns.log       -> CoreDNS Log`
+  - `/var/log/cni.log                       -> CNI Log`
 - Fluentd tails these logs and forwards them to **Google Cloud Logging**.
 
 ### 1.3 Control Plane Logs
