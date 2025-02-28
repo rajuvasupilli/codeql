@@ -232,187 +232,91 @@ Observability in Google Kubernetes Engine (GKE) Standard and GKE Autopilot invol
 
 - Custom Metrics collected via Prometheus or OpenTelemetry.
 
-# Log Transfer Process and Agents in GKE
+# Log Transfer Process and GKE Agents
 
-- Application Logs are captured via container runtimes (e.g., containerd) and forwarded by logging agents.
+# How Google Cloud Logging Agents Pick Up Logs in GKE
 
-- Logs are aggregated and exported to Google Cloud Logging via the logging agent.
+## 1. Application Logs (STDOUT/STDERR)
+- When an application running in a GKE pod writes logs to `stdout` or `stderr`, these logs are captured by the container runtime (e.g., `containerd`).
+- The container runtime stores logs in `/var/log/containers/*.log`, which are symbolic links to `/var/log/pods/<namespace>_<pod_name>_<container_id>/*.log`.
+- The GKE Logging Agent (Fluentd-based) runs as a DaemonSet on every node.
+- Fluentd reads logs from `/var/log/containers/*.log` and sends them to Google Cloud Logging.
 
+## 2. Node Logs (System Logs)
+- Logs from system components like Kubelet, Container Network Interface (CNI), and CoreDNS are written to:
+  - `/var/log/syslog` or `/var/log/messages`
+  - `/var/log/kubelet.log`
+- The GKE Logging Agent (Fluentd) running on each node continuously tails these files and sends them to Google Cloud Logging.
 
-## GKE Logging Setup:
-
-GKE workloads generate logs to stdout/stderr, and these logs are automatically collected by the GKE Logging Agent and sent to Google Cloud Logging, which is based on Fluent Bit, hence we do not need to install any agents inside the applications to collect the **stdout/stderr logs** in GKE. Kubernetes automatically captures these logs and stores them on the node.
-
-## **Fluent Bit Agent for GKE Logs**
-
-| **Category**               | **File Location**          | **Data Destination** | **Grouping**                        | **Destination Path** |
-|----------------------------|----------------------------|----------------------|------------------------------------|----------------------|
-| **Application - STDOUT Logs** | `/var/log/containers`       | Prometheus | Log groups by namespace name | `projects/${PROJECT_ID}/logs/${CLUSTER_NAME}/containers/${NAMESPACE_NAME}` |
-| **Kubelet, CNI, and CoreDNS Logs** | `/var/log/kubelet.log` `/var/log/containers` | Prometheus | Log groups by component name | `projects/${PROJECT_ID}/logs/${CLUSTER_NAME}/system/kubelet` |
-| **System Logs (Node Logs)** | `/var/log/syslog` `/var/log/messages` | Prometheus | Log groups by node name | `projects/${PROJECT_ID}/logs/${CLUSTER_NAME}/system/syslog` |
-| **Control Plane Logs** | Google Cloud Logging (Managed) | Cloud Logging | Log groups by control plane component | `projects/${PROJECT_ID}/logs/${CLUSTER_NAME}/control-plane/${COMPONENT}` |
-
-To **forward logs to Prometheus**, we use **Fluent Bit**, a lightweight and efficient log processor and forwarder that runs as a **DaemonSet** on GKE nodes.
-
-## **Fluent Bit for Prometheus**
-Fluent Bit reads logs from `/var/log/containers` and pushes them to Prometheus. Below are the key steps:
-
-1. **Deploy Fluent Bit as a DaemonSet** to run on each node.
-2. **Configure Fluent Bit to collect application logs** from `/var/log/containers`.
-3. **Use the Prometheus Exporter plugin** to send logs as Prometheus metrics.
-
-### **Fluent Bit Configuration for Prometheus**
-
-#### **1. Install Fluent Bit on GKE**
-Deploy Fluent Bit as a DaemonSet in the cluster:
-
-```yaml
-apiVersion: apps/v1
-kind: DaemonSet
-metadata:
-  name: fluent-bit
-  namespace: logging
-spec:
-  selector:
-    matchLabels:
-      name: fluent-bit
-  template:
-    metadata:
-      labels:
-        name: fluent-bit
-    spec:
-      containers:
-      - name: fluent-bit
-        image: fluent/fluent-bit:latest
-        volumeMounts:
-        - name: varlog
-          mountPath: /var/log
-        - name: varlibdockercontainers
-          mountPath: /var/lib/docker/containers
-          readOnly: true
-      volumes:
-      - name: varlog
-        hostPath:
-          path: /var/log
-      - name: varlibdockercontainers
-        hostPath:
-          path: /var/lib/docker/containers
-```
-
-#### **2. Configure Fluent Bit to Send Logs to Prometheus**
-Create a ConfigMap for Fluent Bit with Prometheus exporter settings:
-
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: fluent-bit-config
-  namespace: logging
-data:
-  fluent-bit.conf: |
-    [SERVICE]
-        Flush         5
-        Daemon        Off
-        Log_Level     info
-    [INPUT]
-        Name         tail
-        Path         /var/log/containers/*.log
-        Parser       docker
-    [OUTPUT]
-        Name        prometheus_exporter
-        Match       *
-        Host        0.0.0.0
-        Port        2020
-```
-
-#### **3. Expose Fluent Bit Metrics to Prometheus**
-Once Fluent Bit is running, Prometheus can scrape metrics from it by adding this job to Prometheus' scrape configuration:
-
-```yaml
-scrape_configs:
-  - job_name: 'fluent-bit'
-    static_configs:
-      - targets: ['fluent-bit.logging.svc.cluster.local:2020']
-```
-
-The same process can be followed to capture and push the data plane/node logs (such as system logs and kubelet logs) by configuring it to read from /var/log/syslog, /var/log/messages, and /var/log/kubelet.log.
-
-## Send Control Plane logs to Prometheus:
-The Control plane logs (API server, scheduler, controller manager, etc.) are managed by Google Cloud Logging and are not stored on the nodes themselves.
-
-To capture control plane logs, we would need to:
-
-### Enable Google Cloud Logging for GKE and use Google Cloud's Logging API to extract and forward logs to Prometheus.
-
-1. Enable Cloud Logging and Export Control Plane Logs
-
-Ensure that Cloud Logging is enabled for your GKE cluster:
-```
-gcloud container clusters update CLUSTER_NAME \
-    --logging=SYSTEM,WORKLOAD
-```
-Then, create a log sink to export control plane logs:
-```
-gcloud logging sinks create control-plane-logs-sink \
-    --destination=pubsub.googleapis.com/projects/${PROJECT_ID}/topics/control-plane-logs-topic \
-    --log-filter='resource.type="k8s_cluster"'
-```
-2. Deploy a Pub/Sub Subscriber to Process Logs
-
-### Create a Pub/Sub subscription to receive logs:
-```
-gcloud pubsub subscriptions create control-plane-logs-sub \
-    --topic=control-plane-logs-topic
-```
-Then, deploy a Fluent Bit instance to subscribe and forward logs:
-```
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: fluent-bit-control-plane
-  namespace: logging
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: fluent-bit
-  template:
-    metadata:
-      labels:
-        app: fluent-bit
-    spec:
-      containers:
-      - name: fluent-bit
-        image: fluent/fluent-bit:latest
-        env:
-        - name: PUBSUB_SUBSCRIPTION
-          value: "control-plane-logs-sub"
-```
-3. Forward Logs to Prometheus
-
-Modify Fluent Bit's configuration to process Cloud Logging logs and expose them as Prometheus metrics:
-```
-[INPUT]
-    Name        pubsub
-    Subscription control-plane-logs-sub
-
-[OUTPUT]
-    Name        prometheus_exporter
-    Match       *
-    Host        0.0.0.0
-    Port        2020
-```
-Finally, configure Prometheus to scrape logs from Fluent Bit:
-```
-scrape_configs:
-  - job_name: 'fluent-bit-control-plane'
-    static_configs:
-      - targets: ['fluent-bit-control-plane.logging.svc.cluster.local:2020']
-```
-This setup ensures that the Control Plane logs from Google Cloud Logging are extracted, processed, and forwarded to Prometheus using Fluent Bit. 
-
+## 3. Control Plane Logs
+- GKE’s control plane components (API Server, Scheduler, Controller Manager, etc.) do not run on worker nodes. Instead, they run on a managed control plane.
+- Google Cloud Logging automatically collects these logs from the control plane and makes them available in Cloud Logging.
+- If logs need to be forwarded elsewhere, a Cloud Logging Sink can export them to Pub/Sub, from where Fluentd or another processor can forward them.
 
 ---
 
+## Log Paths and Fluentd Data Destination Table
 
+| **Log Category** | **File Location** | **Data Destination** | **Correct Grouping** | **Destination Path in Cloud Logging** |
+|------------------|------------------|----------------------|----------------------|--------------------------------------|
+| **Application Logs (STDOUT/STDERR)** | `/var/log/containers/*.log` | Fluentd | Grouped by namespace, pod name, container name | `projects/${PROJECT_ID}/logs/${CLUSTER_NAME}/containers/${NAMESPACE_NAME}` |
+| **Pod Logs (Persistent Logs in Volumes)** | `/var/log/pods/<namespace>_<pod_name>_<container_id>/*.log` | Fluentd | Grouped by namespace, pod name | `projects/${PROJECT_ID}/logs/${CLUSTER_NAME}/pods/${NAMESPACE_NAME}` |
+| **Kubelet Logs** | `/var/log/kubelet.log` | Fluentd | Grouped by node name | `projects/${PROJECT_ID}/logs/${CLUSTER_NAME}/system/kubelet` |
+| **Container Runtime Logs (containerd)** | `/var/log/containerd.log` | Fluentd | Grouped by node name | `projects/${PROJECT_ID}/logs/${CLUSTER_NAME}/system/containerd` |
+| **CoreDNS Logs** | `/var/log/kube-system/coredns.log` | Fluentd | Grouped by namespace and component name | `projects/${PROJECT_ID}/logs/${CLUSTER_NAME}/system/coredns` |
+| **Container Network Interface (CNI) Logs** | `/var/log/cni.log` | Fluentd | Grouped by node name and network component | `projects/${PROJECT_ID}/logs/${CLUSTER_NAME}/system/cni` |
+| **System Logs (OS-Level Logs)** | `/var/log/syslog` or `/var/log/messages` | Fluentd | Grouped by node name | `projects/${PROJECT_ID}/logs/${CLUSTER_NAME}/system/syslog` |
+| **Audit Logs** | `/var/log/audit.log` | Fluentd | Grouped by node name and event type | `projects/${PROJECT_ID}/logs/${CLUSTER_NAME}/system/audit` |
+| **Control Plane Logs (API Server, Scheduler, Controller Manager, etc.)** | Managed by Google Cloud Logging | Fluentd via Pub/Sub Export | Grouped by control plane component | `projects/${PROJECT_ID}/logs/${CLUSTER_NAME}/control-plane/${COMPONENT}` |
 
+---
+
+## How Fluentd Works in GKE
+- Fluentd runs as a **DaemonSet** on all nodes in the cluster.
+- It collects logs from `/var/log/containers`, `/var/log/syslog`, `/var/log/kubelet.log`, and other locations.
+- The logs are then **structured and pushed** to Google Cloud Logging via the `fluent-plugin-google-cloud` plugin.
+- If exporting to another system (e.g., Elasticsearch, Prometheus, or another log sink), Fluentd can be configured to forward logs accordingly.
+
+---
+
+## Fluentd Configuration in GKE
+Below is a sample **Fluentd configuration file** that GKE Logging Agent uses to collect logs.
+
+```xml
+<source>
+  @type tail
+  path /var/log/containers/*.log
+  pos_file /var/log/fluentd-containers.pos
+  tag kubernetes.*
+  format json
+  time_format %Y-%m-%dT%H:%M:%S.%NZ
+</source>
+
+<source>
+  @type tail
+  path /var/log/kubelet.log
+  pos_file /var/log/fluentd-kubelet.pos
+  tag kubelet
+  format none
+</source>
+
+<source>
+  @type tail
+  path /var/log/syslog
+  pos_file /var/log/fluentd-syslog.pos
+  tag system
+  format none
+</source>
+
+<filter kubernetes.**>
+  @type parser
+  key_name log
+  format json
+</filter>
+
+<match kubernetes.**>
+  @type google_cloud
+  project ${PROJECT_ID}
+  resource kubernetes_container
+  flush_interval 5s
+</match>
