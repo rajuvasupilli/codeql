@@ -1,4 +1,4 @@
-# Visit http://"<TBD>.us.bank-dns.com/sd3 for the detailed yml specification
+# Visit http://"<TBD>.us.bank-dns.com/sd3 for the detailed yml specification 
 
 sd3-type: blueprint
 # Specify the SD3 type with one of 'application', 'component' or 'blueprint'
@@ -8,19 +8,19 @@ template-version : 1.1
 
 cloud-service-provider : AWS
 # Specify cloud provider. Ex Azure
-
+ 
 system-name : AWS SFTP Transfer Family
 # Specify the name of the system, application or component
-
+ 
 system-data-classification : Internal
 # Specify the data classification with one of 'Public', 'Confidential', 'Internal', 'NoData' or 'Personal' - application data classifications that can consume this blueprint
-
+ 
 system-owner : awsadmin # AWS Admin
 # Specify the intranet ID of the blueprint product owner (who acts as a CEO for the blueprint and manages the product backlog for the blueprint)
 
 engineering-owner : cloudeng # Cloud Engineering Team
 # Specify the intranet ID of the blueprint engineering owner (Who builds and maintains the code for the blueprint)
-
+ 
 operational-status: Operational
 # Specify operational status with one of 'Operational', 'Under Development', 'Plan'
 
@@ -45,17 +45,44 @@ implementing-controls:
   - 3237 # Security Logging (CLAWS-202)
   - 3045 # Backup Configuration Tag (CLAWS-110)
 
-# Description
-# This blueprint defines the AWS SFTP Transfer Family module, enabling secure and managed SFTP server deployments.
+# Overview
 
-# Features
-# - Supports authentication using AWS Directory Service or service-managed credentials.
-# - Implements endpoint security with public and VPC options.
-# - Enables role-based access control for users.
-# - Provides secure file transfers with FIPS compliance.
-# - Integrates with AWS Route 53 for custom domain mapping.
-# - Supports home directory mappings and logical directory structures.
-# - Enforces secure access with IAM roles and security policies.
-# - Logs all user activities to CloudWatch for audit and compliance.
-# - Ensures encryption for data in transit and at rest using AWS KMS.
+This blueprint outlines the implementation of an **AWS SFTP Transfer Family** module to create a secure, scalable, and managed SFTP solution based on best practices and specific requirements.
+
+**AWS Transfer Family** enables fully managed file transfers over **SFTP, FTPS, and FTP** directly into and out of **Amazon S3 or Amazon EFS**, without the need for traditional file transfer infrastructure. It provides seamless integration with existing authentication systems, robust access controls, and high availability, making it ideal for **secure file exchange, compliance-driven workflows, and automated data processing**.
+
+Organizations across various industries use AWS SFTP Transfer Family to securely transfer files for **financial transactions, healthcare data exchange (HIPAA compliance), media workflows, and enterprise data integrations**. The service supports both **service-managed authentication and AWS Directory Service**, offering flexibility in identity management.
+
+With built-in **logging, encryption, and integration with AWS IAM and CloudWatch**, this solution helps meet strict **security and compliance requirements**, ensuring **reliable and secure** file transfers in cloud environments.
+
+**Ref:** [AWS Transfer Family Documentation](https://docs.aws.amazon.com/transfer/latest/userguide/what-is.html)
+
+# Business Function or Purpose
+
+The primary purpose of this module is to provision a secure and highly configurable AWS SFTP Transfer Family server for managed file transfers within an AWS environment. It ensures that file transfers are encrypted, access-controlled, and logged for compliance and auditing.
+
+This module supports **custom authentication methods**, including **AWS Directory Service and service-managed authentication**, allowing seamless integration with existing identity providers. It also enables **fine-grained access controls** using IAM roles and policies, ensuring that users can only access designated files and directories.
+
+Additionally, this module provides a **scalable, highly available, and cost-effective** solution for organizations that need to transfer files securely without maintaining traditional file transfer infrastructure. It supports **custom domains via Route 53**, **automated logging to CloudWatch**, and **FIPS-compliant security policies**, making it ideal for regulated industries and high-security environments.
+
+**Ref:** [AWS Transfer Family Documentation](https://docs.aws.amazon.com/transfer/latest/userguide/what-is.html)
+
+# Assumptions
+
+Given below are the assumptions for the SD3:
+
+- The configuration assumes an existing AWS environment where the Terraform AWS provider is configured with the necessary permissions to create and manage SFTP Servers and their configurations.  
+- It is assumed that the **identity_provider_type** is correctly specified in the `terraform.tfvars` file to avoid any confusion.  
+- Additionally, it is expected that predefined **tags** will be used to facilitate easy identification and categorization of resources.
+
+# Prerequisites
+This module supports two kinds of identity provider types:
+ - SERVICE_MANAGED
+ - AWS_DIRECTORY_SERVICE
+   
+To create an SFTP Transfer Family service server integrated with AWS Directory Service, you need to meet the following prerequisites:
+ - AWS Directory Service Setup
+ - You must have an AWS Managed Microsoft AD or Simple AD already configured.
+ - The AWS Directory Service should be in the same AWS region where you want to deploy the AWS Transfer Family server.
+ - Ensure that the directory is configured with users and groups that will authenticate via SFTP.
 
