@@ -86,3 +86,60 @@ To create an SFTP Transfer Family service server integrated with AWS Directory S
  - The AWS Directory Service should be in the same AWS region where you want to deploy the AWS Transfer Family server.
  - Ensure that the directory is configured with users and groups that will authenticate via SFTP.
 
+# Limitations
+Below are a few limitations that users should be aware of when creating and managing an SFTP Transfer Family service server:
+
+- AWS Directory Service Integration
+  The AWS Transfer Family service server can only be integrated with AWS Directory Service. You cannot use other identity providers for authentication unless you're using the SERVICE_MANAGED identity provider type.
+
+- Region-Specific Service
+  The AWS Transfer Family service server must be created in the same AWS region as your AWS Directory Service. It cannot be moved to another region after creation.
+
+- User and Group Management
+  The users and groups in your AWS Directory Service must be pre-configured for use in the SFTP Transfer Family service. You cannot modify the user group configuration from the AWS Transfer Family console once the server is set up.
+
+- Limited Number of Servers per Account
+  There is no hard limit on the number of AWS Transfer Family servers that can be created per AWS account, but you may run into service limits if your account exceeds other AWS service quotas.
+
+- Server Deletion and Name Reuse
+  Once an SFTP Transfer Family server is deleted, the name may not be immediately available for reuse. There may be a delay before the server name can be reassigned.
+
+- SFTP Endpoint Configuration
+  Once an endpoint is created for the server, you cannot change the endpoint type (public or VPC) after the creation. You must create a new server if you need a different endpoint type.
+
+- Permissions Management
+  AWS Transfer Family servers require the configuration of IAM roles for users to access and perform file operations. It is important to assign appropriate IAM policies for users to ensure proper access control.
+
+- Server Performance
+  The performance of the AWS Transfer Family service is primarily impacted by the underlying network and AWS Directory Service configurations. The service does not impose any specific limits on the number of simultaneous connections, but performance may degrade if the network or Directory Service is not optimally configured.
+
+- Audit and Monitoring
+  AWS Transfer Family supports logging and monitoring via CloudWatch and AWS CloudTrail. However, the level of detail for file operations might vary, and some advanced auditing features may require additional configuration.
+
+Quotas:
+The following are the service quotas for AWS Transfer Family service servers:
+
+Name	Default	Adjustable	Description
+Transfer Servers	Each supported Region: 100	Yes	The maximum number of AWS Transfer Family service servers you can create per region.
+Users per Server	Each supported Server: 1000	Yes	The maximum number of users that can be associated with a single Transfer Family server.
+Home Directories per User	Each supported Region: 10	Yes	The maximum number of home directories a user can have in an SFTP server.
+Access Control Rules	Each supported Region: 1000	No	The maximum number of access control rules per SFTP server.
+Active Transfers per User	Each supported Region: 20	No	The maximum number of concurrent file transfers allowed per user.
+Public IPs per Server	Each supported Server: 1	Yes	The maximum number of public IPs that can be associated with a Transfer Family server.
+VPC Endpoint per Server	Each supported Server: 1	Yes	The maximum number of VPC endpoints that can be associated with a Transfer Family server.
+CloudWatch Logs Streams	Each supported Server: 5	Yes	The maximum number of CloudWatch Logs streams that can be configured per server.
+Server Endpoint Types	Each supported Server: 2	No	The maximum number of endpoint types (public and VPC) supported by a Transfer Family server.
+Tags per Server	Each supported Server: 50	No	The maximum number of tags that can be assigned to an AWS Transfer Family server.
+Server Logging per Region	Each supported Region: 100	No	The maximum number of logging configurations per region for Transfer Family servers.
+Server and User API Requests	Each supported Region: 1,000 requests per second	No	The maximum rate of API requests that can be made to a Transfer Family server.
+File Size Limit	Each supported Region: 100 GB	No	The maximum size of a file that can be transferred through the SFTP service.
+Transfer Speed Limit	Each supported Region: 10 Gbps	No	The maximum transfer speed for a server, limited by network conditions.
+Active Sessions	Each supported Region: 1,000	Yes	The maximum number of active SFTP sessions allowed per region.
+Notification Destinations	Each supported Server: 10	Yes	The maximum number of destinations for notifications per server.
+
+For more details, you can refer to the official AWS documentation:
+https://docs.aws.amazon.com/transfer/latest/userguide/limits.html
+
+
+
+
