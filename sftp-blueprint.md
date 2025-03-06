@@ -144,80 +144,291 @@ For more details, you can refer to the official AWS documentation:
 
 - [AWS Transfer Family Service Quotas](https://docs.aws.amazon.com/transfer/latest/userguide/limits.html)
 
-Ref. ID
-Capability Name
+# SFTP Transfer Service Servers
 
-6.3.1
-Infrastructure as a Service
+## 6.3.1 Infrastructure as a Service
 
-Technology Architecture
-Amazon SFTP Transfer Service provides the following features: Amazon SFTP (AWS Transfer Family) enables you to move files directly into and out of Amazon S3 or Amazon EFS using the industry-standard SFTP protocol, without needing to modify your SFTP client applications. It offers a fully managed, highly available, and secure way to transfer files over the SFTP protocol into Amazon S3, simplifying the integration of legacy file-based systems with cloud storage.
+### Technology Architecture
 
-Customers of all sizes and industries can use Amazon SFTP for various use cases, including data migrations, secure file transfers, and automated workflows. The service integrates seamlessly with Amazon S3, providing high scalability, security, and performance.
+Amazon SFTP Transfer Service provides the following features.
 
-The AWS Transfer Family offers various features to support the smooth operation of your SFTP-based workloads:
+The AWS Transfer Family allows you to transfer files directly into and out of Amazon S3 using the SFTP, FTP, and FTPS protocols. The service supports securely transferring data between an on-premises environment or an application and Amazon S3. It simplifies the migration process, providing full integration with Amazon S3, and allows users to use AWS Identity and Access Management (IAM) for access control.
 
-Key Features
-Server Types
-AWS Transfer Family provides flexible deployment models:
+### SFTP Transfer Service provides various features, some of which are mentioned below:
 
-Public Endpoints: AWS assigns public IP addresses for users to connect to the server via the internet.
-VPC Endpoints: Users can transfer files within a private network using VPC endpoints, ensuring greater security and data privacy.
-Authentication Methods
-Service-Managed Authentication: Manage users directly within AWS Transfer Family.
-Custom Authentication: Use your existing identity provider (e.g., Active Directory, LDAP) for user authentication.
-IAM Role-Based Access: Assign AWS Identity and Access Management (IAM) roles to provide users with necessary access to Amazon S3 or EFS resources.
-File Transfer Security
-Data Encryption in Transit: Transfer data securely over SFTP with industry-standard encryption.
-Encryption at Rest: Files are encrypted automatically using server-side encryption with Amazon S3 or Amazon EFS.
-Access Control Policies: Use IAM policies, server-side encryption, and AWS Key Management Service (KMS) to define access rules and manage encryption keys.
-Access Management and Security
-AWS SFTP Transfer Service allows secure file transfers while offering several layers of access control and security features:
+#### Managed SFTP Service
+Amazon SFTP Transfer Service offers a fully managed SFTP solution where AWS takes care of all infrastructure, maintenance, and scaling. You don't need to provision and manage servers for handling file transfers.
 
-IAM Integration: Use IAM to control who can access the SFTP server and which files they can interact with. Assign permissions to specific folders and resources in S3.
-Virtual Private Cloud (VPC): Configure your SFTP server to operate within a VPC for additional security.
-Logging and Auditing: Utilize AWS CloudTrail for logging user activity on the SFTP server and Amazon CloudWatch for monitoring.
-Multi-Factor Authentication (MFA): Enforce MFA for more secure user access.
-Integration with AWS Services
-AWS Transfer Family integrates seamlessly with a variety of AWS services:
+#### Protocol Support
+The service supports the following protocols:
+- **SFTP (Secure File Transfer Protocol)**: Standard file transfer protocol over SSH, providing secure encryption of the data in transit.
+- **FTP (File Transfer Protocol)**: Standard file transfer protocol, though it is not secure and should be used in trusted environments.
+- **FTPS (FTP Secure)**: FTP protocol wrapped with TLS/SSL encryption.
 
-Amazon S3: Use Amazon S3 buckets for secure and scalable file storage.
-Amazon EFS: Store files in a fully managed file system that supports NFS-based access.
-AWS Lambda: Automatically trigger AWS Lambda functions when files are uploaded or downloaded, enabling you to process or transform data on the fly.
-Performance and Scalability
-Highly Scalable: Automatically scale to handle thousands of simultaneous file transfers with no infrastructure management required.
-Latency Optimization: Amazon SFTP servers are optimized for low-latency file transfers, ensuring fast data uploads and downloads.
-Concurrent File Transfers: The service supports a high number of concurrent file transfers, helping businesses scale their operations efficiently.
-Monitoring and Logging
-AWS Transfer Family supports monitoring, logging, and alerting through integration with AWS CloudWatch:
+#### Integration with Amazon S3
+Files transferred via SFTP can be directly stored in an Amazon S3 bucket. This integration simplifies the process of storing files securely and with high availability, offering several features that can be used with S3 buckets, such as lifecycle management, encryption, and versioning.
 
-CloudWatch Metrics: Track usage metrics such as the number of active connections and file transfer rates.
-CloudTrail Logging: Record every API call made to your SFTP server for audit purposes.
-Transfer Activity Logs: Automatically log detailed file transfer activity for reporting and analysis.
-Data Processing and Transformation
-AWS Lambda Integration: Process incoming files using Lambda functions to perform operations such as data validation, transformation, and routing to other services or systems.
-Event Notifications: Use Amazon SNS, SQS, or Lambda to trigger workflows in response to file uploads or other activities on the SFTP server.
-Server Logging and Monitoring
-AWS Transfer Family offers detailed logging and monitoring to track your file transfer operations:
+#### Authentication and Access Control
+- **AWS Identity and Access Management (IAM)**: You can manage and control access to your SFTP servers using IAM policies. You can create roles and assign specific access rights to users.
+- **Directory Integration**: The service supports integrating with AWS Directory Service or an existing Active Directory, allowing you to manage users from a central location.
+- **Public Key Authentication**: You can set up SSH keys for secure, passwordless login.
 
-Automated Monitoring: Use CloudWatch metrics to monitor file transfer statistics.
-Manual Monitoring: Set up detailed server activity logs to track access, errors, and file transfer events.
-AWS Trusted Advisor: Get optimization recommendations based on AWS best practices for your server setup.
-Analytics and Insights
-Gain valuable insights into file transfers and server activity:
+#### High Availability and Scaling
+AWS SFTP Transfer Service is designed for high availability. It scales automatically based on the number of users and requests. The service ensures that you have a reliable solution for handling file transfers in a scalable and cost-effective manner.
 
-SFTP Transfer Reports: Generate reports on transfer activity, errors, and file sizes.
-AWS CloudWatch Dashboards: Create custom dashboards to visualize transfer data and monitor server health.
-Audit and Compliance Reporting: Generate detailed logs for auditing purposes, ensuring compliance with industry regulations.
-Strong Consistency
-AWS SFTP Transfer Service ensures strong consistency for file transfers:
+### Access Management and Security
+- **Data Encryption**: The service provides end-to-end encryption both in transit and at rest. Data is encrypted during transfer using SFTP, and at rest, it is encrypted using AWS S3's encryption options (e.g., AES-256, SSE-KMS).
+- **Server Authentication**: The servers themselves can be authenticated using keys or password-based authentication, and client connections can also be secured using certificates.
+- **Logging**: Detailed logs for user actions are generated for auditing purposes. You can monitor activities, such as file uploads, downloads, and authentication events, using AWS CloudTrail or AWS CloudWatch.
 
-Read-After-Write Consistency: Files are immediately available for download after a successful upload, providing strong consistency for file access operations.
-Atomic Operations: All file operations (e.g., uploads, downloads, deletions) are atomic, ensuring no partial transfers or incomplete file states.
+### Data Processing
+- **Event Notifications**: You can trigger Amazon SNS, Amazon SQS, or AWS Lambda functions whenever a file is uploaded or downloaded, enabling automated workflows based on file events.
+- **Lambda Integration**: You can run AWS Lambda functions when files are transferred to Amazon S3, enabling custom processing tasks such as data transformation, validation, or triggering downstream processes.
 
-For more details, you can refer to the official AWS documentation:
-https://docs.aws.amazon.com/transfer/
+### Storage Logging and Monitoring
+- **Amazon CloudWatch**: You can monitor and visualize file transfer operations using Amazon CloudWatch metrics and logs.
+- **AWS CloudTrail**: CloudTrail records the API calls made to the SFTP service for auditing and monitoring purposes.
+- **Server Logs**: SFTP logs are available to track file access, authentication, and transfer activities.
 
+### Analytics and Insights
+- **Amazon S3 Inventory**: You can use S3 Inventory reports to track the file metadata stored in your SFTP server’s destination S3 bucket, helping you track usage and organize data efficiently.
+- **S3 Analytics**: Use S3 Analytics to gain insights into your storage access patterns, helping you decide when to move data to more cost-effective storage classes.
 
+### Strong Consistency
+Amazon SFTP Transfer Service guarantees strong consistency for all file upload and download operations, ensuring that once a file is uploaded, it is immediately available for access. This behavior applies to both new files and updates to existing files.
+
+For more information, refer to the [AWS SFTP Transfer Service Documentation](https://aws.amazon.com/sftp/).
+
+# Deployment Architecture
+
+Link to the module described here can be found in the Modules and Automation section, below.
+The module `module-transfer-sftp` can create AWS SFTP Transfer Service instances.
+The resource SFTP Transfer Service will be created in the specified AWS region and will have the following features depending on the inputs provided to the module.
+
+### Features:
+
+- **Access Controls**: Utilize IAM roles and policies to restrict access to the SFTP service, ensuring that only authorized users and services can interact with the SFTP servers.
+- **Encryption**: Leverage AWS KMS for server-side encryption of data at rest. Data transferred via SFTP will also be encrypted in transit.
+- **Logging**: Enable logging of user activity and file transfer operations via CloudTrail and CloudWatch for auditing and monitoring purposes.
+- **Directory Integration**: Integrate the service with AWS Directory Service or an existing Active Directory for centralized user authentication and management.
+- **Key Management**: Use SSH keys for secure, passwordless login for SFTP users.
+
+### Recommendations:
+
+- **Cost Optimization**: Regularly review and adjust the SFTP Transfer Service configuration to optimize costs, considering factors such as the number of active users, transfer volume, and storage used in Amazon S3.
+- **Security Best Practices**: Use IAM policies to enforce the principle of least privilege and manage user access securely. Periodically rotate SSH keys and enforce strong authentication methods for users.
+
+For more information, refer to the [AWS Transfer Family Documentation](https://docs.aws.amazon.com/transfer/latest/userguide/Welcome.html).
+
+# Connectivity Architecture
+
+## SFTP Transfer Service
+The SFTP Transfer Service allows secure file transfer over the network using the SFTP (Secure File Transfer Protocol) protocol. This service ensures the confidentiality and integrity of your data during transmission by encrypting data over the network. The service can be accessed programmatically using SFTP client libraries or through automated scripts.
+
+### Key Notes:
+- **Encryption:** All file transfers over the SFTP server are encrypted to ensure data security.
+- **Unique Server Name:** Each SFTP server must have a unique name to avoid conflicts and ensure smooth operation.
+- **Public Access:** By default, public access to the SFTP server is restricted. This ensures that only authorized users can connect to the server.
+- **Access Control:** The SFTP server uses ACLs (Access Control Lists) to define and control permissions for the files and directories.
+
+## Endpoints for SFTP
+To connect programmatically to an SFTP service, you can use SFTP client tools that provide an endpoint to the server. The endpoint structure typically follows the `hostname:port` format, where `hostname` is the SFTP server's address, and `port` is the communication port (usually port 22 for SFTP).
+
+### Note:
+- The SFTP server supports the standard SFTP protocol and can be configured to use different authentication methods like password-based or key-based authentication.
+
+## Failover and DR Architecture (Business Continuity & Disaster Recovery)
+
+The SFTP Transfer Service utilizes a highly available architecture to ensure continuous operation. It can be deployed across multiple availability zones to provide fault tolerance and automatic failover capabilities.
+
+- **SFTP Redundancy:** The system is designed to handle automatic failover in case of a server failure. Data transfer is redirected to a backup SFTP server.
+- **Cross-region Replication:** Data can be replicated across geographically separated locations for enhanced resilience.
+- **Backup & Recovery:** Regular backups of transferred files and configuration settings are stored to provide a reliable disaster recovery mechanism in case of failures.
+
+### Note:
+- The disaster recovery (DR) setup ensures that even in case of a regional outage, the files can be recovered from replicated SFTP servers.
+
+## Observability
+
+### Monitoring and Logging
+To maintain the reliability, availability, and performance of the SFTP Transfer Service, it's essential to monitor the system continuously. Various monitoring tools can be used to collect and analyze logs.
+
+1. **Automated Monitoring Tools:**
+   - **SFTP Health Checks:** The system provides health check endpoints that can be monitored using tools like **Amazon CloudWatch** to ensure SFTP service uptime.
+   - **Error Logging:** All errors during file transfer, authentication failures, and other issues are logged for troubleshooting and auditing purposes.
+
+2. **Logging Options:**
+   - **SFTP Logs:** The system logs all SFTP operations, including file uploads, downloads, authentication attempts, and errors.
+   - **Audit Trails:** Detailed logs are maintained for auditing file access and transfers. These logs are stored securely and can be queried using built-in tools.
+
+### Logging Options:
+- **Access Logs:** Logs of all SFTP connections and file operations.
+- **Error Logs:** Logs of failed file transfers, authentication issues, and service downtime.
+- **Audit Logs:** Detailed records of file transfer operations for compliance and auditing purposes.
+
+### Logging and Monitoring for Compliance:
+- **Compliance Logging:** The service provides the ability to configure logging to meet specific compliance requirements, such as GDPR or HIPAA.
+- **Log Storage:** Logs are stored securely, and you can configure retention policies for data compliance.
+
+## Performance and Cost
+
+### Performance Considerations:
+- The SFTP server is designed to handle high volumes of data transfers with low latency.
+- **Throughput:** The service supports high-throughput file transfers, making it suitable for both small and large-scale operations.
+
+### Cost Considerations:
+- **Data Transfer Costs:** Transferred data is subject to network charges depending on the region and data volume.
+- **Storage Costs:** Transferred files may incur storage costs depending on how long they are retained on the server.
+
+## Security Best Practices
+
+### Key Security Measures:
+- **SSH Key Authentication:** Strong SSH key-based authentication should be used for all SFTP connections to enhance security.
+- **Encryption:** All files transferred are encrypted using strong encryption standards like AES-256.
+- **Access Control:** Use granular access control settings to restrict access to files based on user roles.
+- **Auditing:** Regular audits of access logs and transfer logs to ensure compliance with security policies.
+
+### Additional Features:
+- **Two-Factor Authentication:** Optional two-factor authentication for added security when accessing the SFTP service.
+- **IP Whitelisting:** Restrict access to the SFTP server by allowing only specific IP addresses to connect.
+
+# SFTP Transfer Service Server
+
+## System Components and Boundaries
+
+The **SFTP Transfer Service** allows the secure transfer of files over the network using the SFTP protocol. It involves a server, typically a dedicated machine or service, that manages file transfers. The SFTP server is configured to ensure secure and encrypted connections for transferring files between clients and the server.
+
+### Key Notes:
+- **SFTP Server:** The server that accepts SFTP connections from clients for file uploads or downloads.
+- **File Integrity:** SFTP ensures the confidentiality and integrity of files during transmission.
+- **Access Control:** Access to the SFTP server is controlled using authentication mechanisms like SSH keys or passwords.
+
+---
+
+## SFTP Server
+
+The **SFTP server** acts as the core component in the SFTP Transfer Service. It provides a centralized location for secure file transfers. Files are stored in directories within the server, and access to them is managed by the server’s authentication system.
+
+### Key Components:
+- **Directory Structure:** SFTP servers organize files into directories. Each directory can have different permissions for users to read, write, or execute files.
+- **Authentication Methods:** Users can authenticate to the SFTP server using methods such as **SSH keys**, **passwords**, or **multi-factor authentication (MFA)**.
+- **Logging and Monitoring:** The server logs all access attempts, file transfers, and errors to provide insights into the system's usage and health.
+
+### Access Control
+
+The SFTP server provides various access control mechanisms to define who can access specific directories or files. These include:
+
+- **User Permissions:** Control over what users can do within their directories, such as reading, writing, or executing files.
+- **Group Permissions:** Files can be shared between users within the same group, with permissions defined at the group level.
+- **ACLs (Access Control Lists):** Fine-grained access control can be implemented using ACLs to specify which users or groups have access to specific files or directories.
+
+---
+
+## Files
+
+Files are the primary objects within the SFTP server and can be transferred securely over the network using the SFTP protocol. Each file in the server is stored within a specific directory and can be identified by its unique path in the directory tree.
+
+### Key Attributes:
+- **File Path:** The unique path (including the file name) used to locate a file on the SFTP server.
+- **File Permissions:** Files have read, write, and execute permissions that define what actions users can take on the file.
+
+---
+
+## Encryption and Security
+
+The **SFTP protocol** inherently encrypts data during transfer to ensure that sensitive data remains secure. The SFTP server can also be configured with additional security measures:
+
+- **SSH Key-based Authentication:** Provides a more secure authentication method than passwords.
+- **File Integrity Checks:** Ensures that files transferred to and from the server are not altered during transmission.
+- **Encrypted Storage:** Files may be stored in encrypted format to ensure data protection while at rest.
+
+---
+
+## SFTP Versioning (Optional)
+
+Some SFTP servers may offer versioning capabilities, which allow maintaining multiple versions of a file within the same directory. This feature is useful for recovering older versions of files that may have been accidentally overwritten or deleted.
+
+- **Versioning Enabled:** The server stores different versions of a file and assigns a unique identifier to each version.
+- **Version ID:** A version ID is associated with each file to uniquely identify it among other versions.
+
+---
+
+## Server Policies
+
+Server policies are used to enforce security and operational best practices. Policies can be set to control aspects like authentication methods, access controls, and file retention. Policies are defined by the server administrator and applied at the server or directory level.
+
+- **File Retention Policies:** Define how long files are kept on the server before they are automatically archived or deleted.
+- **Access Control Policies:** Define what type of access is granted to users or groups and for which directories or files.
+
+---
+
+## Directory Structure
+
+The directory structure on the SFTP server organizes the files and defines access control boundaries. Each user is typically granted access to a specific directory or set of directories.
+
+- **Home Directory:** Each user has a home directory where they can upload or download files.
+- **Shared Directories:** Directories can be shared among users or groups, with different levels of permissions (read, write, execute).
+
+---
+
+## Access Control Lists (ACLs)
+
+The SFTP server may support **Access Control Lists (ACLs)** to grant fine-grained control over file and directory access.
+
+- **ACL for Files:** ACLs are used to specify which users or groups can access a particular file and what actions they can perform (e.g., read, write, or execute).
+- **Default ACLs:** Default ACLs can be applied to new files and directories, ensuring consistent access control for all items.
+
+---
+
+## Regions (Geographic Location)
+
+The SFTP server can be hosted in different geographical locations depending on the provider or on-premises infrastructure. Choosing the right region can optimize latency, ensure compliance with data residency regulations, and meet performance requirements.
+
+- **Regional Hosting:** Select a region to host your SFTP server to optimize file transfer speeds and meet regulatory compliance for data storage.
+- **Data Residency:** Ensure that files stored in the SFTP server remain within the region of choice, ensuring compliance with data protection laws.
+
+---
+
+# Application Architecture
+
+Create a base Terraform module to deploy an **SFTP Transfer Service Server** with configurable options for server access, authentication methods, file storage, logging, encryption, and network access controls. This module includes advanced security measures such as enforcing encryption for file transfers, restricting public access, enabling key-based SSH authentication, and supporting automated tagging for resource identification.
+
+## Application Dependencies
+
+- **SSH Key Pair:** Required for secure SSH-based authentication to the SFTP server.
+- **Encryption Key:** Required for server-side encryption of files stored on the server.
+
+---
+
+# Data Flow Diagram
+
+Refer to the following diagram for this description.
+An **SFTP Transfer Service Server** stores data as files within directories. A directory is a container for files, and files are identified by their unique path and file name. To transfer data securely, clients connect to the SFTP server using the SFTP protocol, which operates over an encrypted SSH channel.
+
+The data flow includes:
+
+1. **Client Upload:** Clients upload files securely to the SFTP server. The file is stored in a designated directory on the server.
+2. **File Access:** Files are accessed by clients or administrators based on the access controls configured for the specific directory.
+3. **Encryption:** Files are encrypted at rest on the SFTP server using an encryption key. This ensures that files remain secure even when stored.
+4. **Access Control:** Access to files is controlled using SSH key-based authentication, user-specific directories, and defined permissions (read, write, execute).
+
+The SFTP service provides features that can be configured to suit your specific needs. For example, access control is managed by configuring user-specific access rights for directories. Additionally, encryption ensures that file transfers and stored data are always protected.
+
+---
+
+# Ports, Protocols, and Service
+
+The **SFTP Transfer Service Server** operates using the SSH protocol for secure file transfers. The communication occurs over an encrypted channel, ensuring data security.
+
+- **Protocol:** SFTP (Secure File Transfer Protocol) over SSH.
+- **Port:** The default port used by SFTP servers is **22**, which is the standard port for SSH connections.
+- **Encryption:** Files are encrypted during transfer using SSH encryption mechanisms. Additionally, the files can be encrypted at rest on the server using an encryption key.
+
+### Communication Flow:
+- **Port 22:** For SFTP and SSH-based communication
+- **Protocol:** SFTP over SSH (uses standard SSH encryption)
+- **Encryption:** Data encryption during transmission, optional encryption for data at rest
+
+Ref: [SFTP Protocol Overview](https://en.wikipedia.org/wiki/SSH_File_Transfer_Protocol)
 
 
