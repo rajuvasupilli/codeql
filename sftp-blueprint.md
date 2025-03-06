@@ -116,29 +116,107 @@ Below are a few limitations that users should be aware of when creating and mana
 - Audit and Monitoring
   AWS Transfer Family supports logging and monitoring via CloudWatch and AWS CloudTrail. However, the level of detail for file operations might vary, and some advanced auditing features may require additional configuration.
 
-Quotas:
+## Quotas:
 The following are the service quotas for AWS Transfer Family service servers:
 
-Name	Default	Adjustable	Description
-Transfer Servers	Each supported Region: 100	Yes	The maximum number of AWS Transfer Family service servers you can create per region.
-Users per Server	Each supported Server: 1000	Yes	The maximum number of users that can be associated with a single Transfer Family server.
-Home Directories per User	Each supported Region: 10	Yes	The maximum number of home directories a user can have in an SFTP server.
-Access Control Rules	Each supported Region: 1000	No	The maximum number of access control rules per SFTP server.
-Active Transfers per User	Each supported Region: 20	No	The maximum number of concurrent file transfers allowed per user.
-Public IPs per Server	Each supported Server: 1	Yes	The maximum number of public IPs that can be associated with a Transfer Family server.
-VPC Endpoint per Server	Each supported Server: 1	Yes	The maximum number of VPC endpoints that can be associated with a Transfer Family server.
-CloudWatch Logs Streams	Each supported Server: 5	Yes	The maximum number of CloudWatch Logs streams that can be configured per server.
-Server Endpoint Types	Each supported Server: 2	No	The maximum number of endpoint types (public and VPC) supported by a Transfer Family server.
-Tags per Server	Each supported Server: 50	No	The maximum number of tags that can be assigned to an AWS Transfer Family server.
-Server Logging per Region	Each supported Region: 100	No	The maximum number of logging configurations per region for Transfer Family servers.
-Server and User API Requests	Each supported Region: 1,000 requests per second	No	The maximum rate of API requests that can be made to a Transfer Family server.
-File Size Limit	Each supported Region: 100 GB	No	The maximum size of a file that can be transferred through the SFTP service.
-Transfer Speed Limit	Each supported Region: 10 Gbps	No	The maximum transfer speed for a server, limited by network conditions.
-Active Sessions	Each supported Region: 1,000	Yes	The maximum number of active SFTP sessions allowed per region.
-Notification Destinations	Each supported Server: 10	Yes	The maximum number of destinations for notifications per server.
+| **Name**                          | **Default**              | **Adjustable** | **Description**                                                                 |
+|-----------------------------------|--------------------------|----------------|---------------------------------------------------------------------------------|
+| **Transfer Servers**              | Each supported Region: 100 | Yes            | The maximum number of AWS Transfer Family service servers you can create per region. |
+| **Users per Server**              | Each supported Server: 1000 | Yes            | The maximum number of users that can be associated with a single Transfer Family server. |
+| **Home Directories per User**     | Each supported Region: 10  | Yes            | The maximum number of home directories a user can have in an SFTP server. |
+| **Access Control Rules**          | Each supported Region: 1000 | No             | The maximum number of access control rules per SFTP server.                      |
+| **Active Transfers per User**     | Each supported Region: 20   | No             | The maximum number of concurrent file transfers allowed per user.                |
+| **Public IPs per Server**         | Each supported Server: 1    | Yes            | The maximum number of public IPs that can be associated with a Transfer Family server. |
+| **VPC Endpoint per Server**       | Each supported Server: 1    | Yes            | The maximum number of VPC endpoints that can be associated with a Transfer Family server. |
+| **CloudWatch Logs Streams**       | Each supported Server: 5    | Yes            | The maximum number of CloudWatch Logs streams that can be configured per server. |
+| **Server Endpoint Types**         | Each supported Server: 2    | No             | The maximum number of endpoint types (public and VPC) supported by a Transfer Family server. |
+| **Tags per Server**               | Each supported Server: 50   | No             | The maximum number of tags that can be assigned to an AWS Transfer Family server. |
+| **Server Logging per Region**     | Each supported Region: 100  | No             | The maximum number of logging configurations per region for Transfer Family servers. |
+| **Server and User API Requests**  | Each supported Region: 1,000 requests per second | No | The maximum rate of API requests that can be made to a Transfer Family server. |
+| **File Size Limit**               | Each supported Region: 100 GB | No             | The maximum size of a file that can be transferred through the SFTP service. |
+| **Transfer Speed Limit**          | Each supported Region: 10 Gbps | No             | The maximum transfer speed for a server, limited by network conditions. |
+| **Active Sessions**               | Each supported Region: 1,000 | Yes            | The maximum number of active SFTP sessions allowed per region. |
+| **Notification Destinations**     | Each supported Server: 10   | Yes            | The maximum number of destinations for notifications per server. |
+
+---
 
 For more details, you can refer to the official AWS documentation:
-https://docs.aws.amazon.com/transfer/latest/userguide/limits.html
+
+- [AWS Transfer Family Service Quotas](https://docs.aws.amazon.com/transfer/latest/userguide/limits.html)
+
+Ref. ID
+Capability Name
+
+6.3.1
+Infrastructure as a Service
+
+Technology Architecture
+Amazon SFTP Transfer Service provides the following features: Amazon SFTP (AWS Transfer Family) enables you to move files directly into and out of Amazon S3 or Amazon EFS using the industry-standard SFTP protocol, without needing to modify your SFTP client applications. It offers a fully managed, highly available, and secure way to transfer files over the SFTP protocol into Amazon S3, simplifying the integration of legacy file-based systems with cloud storage.
+
+Customers of all sizes and industries can use Amazon SFTP for various use cases, including data migrations, secure file transfers, and automated workflows. The service integrates seamlessly with Amazon S3, providing high scalability, security, and performance.
+
+The AWS Transfer Family offers various features to support the smooth operation of your SFTP-based workloads:
+
+Key Features
+Server Types
+AWS Transfer Family provides flexible deployment models:
+
+Public Endpoints: AWS assigns public IP addresses for users to connect to the server via the internet.
+VPC Endpoints: Users can transfer files within a private network using VPC endpoints, ensuring greater security and data privacy.
+Authentication Methods
+Service-Managed Authentication: Manage users directly within AWS Transfer Family.
+Custom Authentication: Use your existing identity provider (e.g., Active Directory, LDAP) for user authentication.
+IAM Role-Based Access: Assign AWS Identity and Access Management (IAM) roles to provide users with necessary access to Amazon S3 or EFS resources.
+File Transfer Security
+Data Encryption in Transit: Transfer data securely over SFTP with industry-standard encryption.
+Encryption at Rest: Files are encrypted automatically using server-side encryption with Amazon S3 or Amazon EFS.
+Access Control Policies: Use IAM policies, server-side encryption, and AWS Key Management Service (KMS) to define access rules and manage encryption keys.
+Access Management and Security
+AWS SFTP Transfer Service allows secure file transfers while offering several layers of access control and security features:
+
+IAM Integration: Use IAM to control who can access the SFTP server and which files they can interact with. Assign permissions to specific folders and resources in S3.
+Virtual Private Cloud (VPC): Configure your SFTP server to operate within a VPC for additional security.
+Logging and Auditing: Utilize AWS CloudTrail for logging user activity on the SFTP server and Amazon CloudWatch for monitoring.
+Multi-Factor Authentication (MFA): Enforce MFA for more secure user access.
+Integration with AWS Services
+AWS Transfer Family integrates seamlessly with a variety of AWS services:
+
+Amazon S3: Use Amazon S3 buckets for secure and scalable file storage.
+Amazon EFS: Store files in a fully managed file system that supports NFS-based access.
+AWS Lambda: Automatically trigger AWS Lambda functions when files are uploaded or downloaded, enabling you to process or transform data on the fly.
+Performance and Scalability
+Highly Scalable: Automatically scale to handle thousands of simultaneous file transfers with no infrastructure management required.
+Latency Optimization: Amazon SFTP servers are optimized for low-latency file transfers, ensuring fast data uploads and downloads.
+Concurrent File Transfers: The service supports a high number of concurrent file transfers, helping businesses scale their operations efficiently.
+Monitoring and Logging
+AWS Transfer Family supports monitoring, logging, and alerting through integration with AWS CloudWatch:
+
+CloudWatch Metrics: Track usage metrics such as the number of active connections and file transfer rates.
+CloudTrail Logging: Record every API call made to your SFTP server for audit purposes.
+Transfer Activity Logs: Automatically log detailed file transfer activity for reporting and analysis.
+Data Processing and Transformation
+AWS Lambda Integration: Process incoming files using Lambda functions to perform operations such as data validation, transformation, and routing to other services or systems.
+Event Notifications: Use Amazon SNS, SQS, or Lambda to trigger workflows in response to file uploads or other activities on the SFTP server.
+Server Logging and Monitoring
+AWS Transfer Family offers detailed logging and monitoring to track your file transfer operations:
+
+Automated Monitoring: Use CloudWatch metrics to monitor file transfer statistics.
+Manual Monitoring: Set up detailed server activity logs to track access, errors, and file transfer events.
+AWS Trusted Advisor: Get optimization recommendations based on AWS best practices for your server setup.
+Analytics and Insights
+Gain valuable insights into file transfers and server activity:
+
+SFTP Transfer Reports: Generate reports on transfer activity, errors, and file sizes.
+AWS CloudWatch Dashboards: Create custom dashboards to visualize transfer data and monitor server health.
+Audit and Compliance Reporting: Generate detailed logs for auditing purposes, ensuring compliance with industry regulations.
+Strong Consistency
+AWS SFTP Transfer Service ensures strong consistency for file transfers:
+
+Read-After-Write Consistency: Files are immediately available for download after a successful upload, providing strong consistency for file access operations.
+Atomic Operations: All file operations (e.g., uploads, downloads, deletions) are atomic, ensuring no partial transfers or incomplete file states.
+
+For more details, you can refer to the official AWS documentation:
+https://docs.aws.amazon.com/transfer/
 
 
 
