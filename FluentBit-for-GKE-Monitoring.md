@@ -86,6 +86,7 @@ Fluent Bit's behavior can be tailored by modifying its configuration.
 7. **Click Run Query.**
 
 8. **In the Logs field explorer, select test-logger for CONTAINER_NAME. After you add the log field to the summary line, you should see logs similar to the following:**
+   ![Description of Image](C:\\Users\\Raju\\Documents\\fluentbit-gke-cloud-logging)
 
 
 ## Step 3: Monitor Fluent Bit
