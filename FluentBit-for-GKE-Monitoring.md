@@ -14,6 +14,12 @@ Deploy our own Fluent Bit DaemonSet on a Google Kubernetes Engine cluster, confi
 
 In this document, we learn how to host our own configurable Fluent Bit DaemonSet to send logs to Cloud Logging instead of selecting the Cloud Logging option when creating the Google Kubernetes Engine (GKE) cluster, which does not allow configuration of the Fluent Bit daemon.
 
+## Concept
+
+Kubernetes manages a cluster of nodes. The Fluent Bit log agent tool needs to run on every node to collect logs from every pod. Fluent Bit is deployed as a DaemonSet, which is a pod that runs on every node of the cluster.
+
+When Fluent Bit runs, it reads, parses, and filters the logs of every pod. In addition, Fluent Bit adds metadata to each entry using the Kubernetes filter plugin.
+
 ## Step 1: Install Fluent Bit Using Helm
 
 1. **Add the Fluent Helm Charts Repository**:
@@ -85,9 +91,7 @@ Fluent Bit's behavior can be tailored by modifying its configuration.
 
 7. **Click Run Query.**
 
-8. **In the Logs field explorer, select test-logger for CONTAINER_NAME. After you add the log field to the summary line, you should see logs similar to the following:**
-   
-   ![Description of Image](C:\\Users\\Raju\\Documents\\fluentbit-gke-cloud-logging)
+8. **In the Logs field explorer, select the CONTAINER_NAME. After you add the log field to the summary line, you should see logs similar to the following:**
 
 
 ## Step 3: Monitor Fluent Bit
