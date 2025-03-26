@@ -24,7 +24,6 @@ Configure the following variables when using the module:
 
 The Venafi Terraform module can be used as below:
 
-```hcl
 module "venafi" {
   source      = "git::https://gitlab.us.bank-dns.com/USBCLOUDPLATFORM/aws/computing/tf_modules/module-venafi-cert.git/?ref=feature/CPEAWS-2362"
   count       = var.instance_count
@@ -40,12 +39,7 @@ module "venafi" {
 
 
 
-## Security Considerations:
 
-**Authentication:** Ensure that OAuth credentials for Venafi are securely stored and managed.
-**Access Control:** Limit AWS IAM permissions to only those necessary for certificate management.
-**Logging and Monitoring:** Implement logging and monitoring to track certificate issuance and usage.
-  
 
 
 
