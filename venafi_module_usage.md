@@ -19,24 +19,6 @@ Configure the following variables when using the module:
  - account_id: AWS account ID.
  - cert_sans: Subject Alternative Name (SAN) for the certificate.
 
-
-## Module Usage:
-
-The Venafi Terraform module can be used as below:
-
-```hcl
-module "venafi" {
-  source      = "git::https://gitlab.us.bank-dns.com/USBCLOUDPLATFORM/aws/computing/tf_modules/module-venafi-cert.git/?ref=feature/CPEAWS-2362"
-  count       = var.instance_count
-  hostname    = module.scm_registration[count.index].scm_name
-  environment = var.environment
-  region      = var.region
-  account_id  = 147058048292 # data.aws_caller_identity.current.account_id
-  cert_sans   = "${module.scm_registration[count.index].scm_name}.nonprod.aws.prv"
-}
-
-
-
 ## Security Considerations:
 
 **Authentication:** Ensure that OAuth credentials for Venafi are securely stored and managed.
