@@ -36,7 +36,12 @@ module "venafi" {
 
 
 
+## Security Considerations:
 
+**Authentication:** Ensure that OAuth credentials for Venafi are securely stored and managed.
+**Access Control:** Limit AWS IAM permissions to only those necessary for certificate management.
+**Logging and Monitoring:** Implement logging and monitoring to track certificate issuance and usage.
+  
 
 
 
