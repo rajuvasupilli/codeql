@@ -24,13 +24,14 @@ module "venafi" {
   cert_sans   = "${module.scm_registration[count.index].scm_name}.nonprod.aws.prv"
 }
 
-## Module Variables
-# Configure the following variables when using the module:
-- instance_count: Number of instances requiring certificates.
-- hostname: The hostname for the certificate.
-- environment: Deployment environment (e.g., nonprod, prod).
-- region: AWS region (e.g., us-east-1).
-- account_id: AWS account ID.
-- cert_sans: Subject Alternative Name (SAN) for the certificate.
+## **Module Variables**
+
+Configure the following variables when using the module:
+ - instance_count: Number of instances requiring certificates.
+ - hostname: The hostname for the certificate.
+ - environment: Deployment environment (e.g., nonprod, prod).
+ - region: AWS region (e.g., us-east-1).
+ - account_id: AWS account ID.
+ - cert_sans: Subject Alternative Name (SAN) for the certificate.
 
 
