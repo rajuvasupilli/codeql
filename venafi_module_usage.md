@@ -8,11 +8,10 @@ Before using the Venafi Terraform module, ensure you have the following:
 
 - **Venafi API Access:** Obtain OAuth credentials for authentication with the Venafi platform.
 - **AWS Credentials:** Configure AWS credentials with permissions to interact with AWS Certificate Manager (ACM).
-- **Terraform Environment:** Install [Terraform](https://www.terraform.io/downloads.html) version 0.13 or higher.
+  
+## Usage
 
-## Module Source
-
-The Venafi Terraform module is sourced from the following Git repository:
+The Venafi Terraform module can be used as below:
 
 ```hcl
 module "venafi" {
@@ -24,3 +23,5 @@ module "venafi" {
   account_id  = 147058048292 # data.aws_caller_identity.current.account_id
   cert_sans   = "${module.scm_registration[count.index].scm_name}.nonprod.aws.prv"
 }
+
+
