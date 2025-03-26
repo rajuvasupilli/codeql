@@ -24,6 +24,7 @@ Configure the following variables when using the module:
 
 The Venafi Terraform module can be used as below:
 
+```hcl
 module "venafi" {
   source      = "git::https://gitlab.us.bank-dns.com/USBCLOUDPLATFORM/aws/computing/tf_modules/module-venafi-cert.git/?ref=feature/CPEAWS-2362"
   count       = var.instance_count
