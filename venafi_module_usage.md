@@ -21,9 +21,9 @@ Configure the following variables when using the module:
 
 ## Security Considerations:
 
-**Authentication:** Ensure that OAuth credentials for Venafi are securely stored and managed.
-**Access Control:** Limit AWS IAM permissions to only those necessary for certificate management.
-**Logging and Monitoring:** Implement logging and monitoring to track certificate issuance and usage.
+- **Authentication:** Ensure that OAuth credentials for Venafi are securely stored and managed.
+- **Access Control:** Limit AWS IAM permissions to only those necessary for certificate management.
+- **Logging and Monitoring:** Implement logging and monitoring to track certificate issuance and usage.
   
 # Module Variables
 
@@ -36,7 +36,7 @@ Configure the following variables when using the module:
 - **`account_id`**: AWS account ID.
 - **`cert_sans`**: Subject Alternative Name (SAN) for the certificate.
 
-# Usage Example
+# Module Usage Example
 
 Below is an example of how to use the Venafi module in your Terraform configuration:
 
@@ -51,12 +51,6 @@ variable "environment" {
 
 variable "region" {
   default = "us-east-1"
-}
-
-module "scm_registration" {
-  source = "path_to_scm_registration_module"
-  count  = var.instance_count
-  # Additional configuration for scm_registration module
 }
 
 module "venafi" {
