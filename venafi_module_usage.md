@@ -43,6 +43,49 @@ module "venafi" {
 **Access Control:** Limit AWS IAM permissions to only those necessary for certificate management.
 **Logging and Monitoring:** Implement logging and monitoring to track certificate issuance and usage.
   
+# Module Variables
+
+Configure the following variables when using the module:
+
+- **`instance_count`**: Number of instances requiring certificates.
+- **`hostname`**: The hostname for the certificate.
+- **`environment`**: Deployment environment (e.g., `nonprod`, `prod`).
+- **`region`**: AWS region (e.g., `us-east-1`).
+- **`account_id`**: AWS account ID.
+- **`cert_sans`**: Subject Alternative Name (SAN) for the certificate.
+
+# Usage Example
+
+Below is an example of how to use the Venafi module in your Terraform configuration:
+
+```hcl
+variable "instance_count" {
+  default = 1
+}
+
+variable "environment" {
+  default = "nonprod"
+}
+
+variable "region" {
+  default = "us-east-1"
+}
+
+module "scm_registration" {
+  source = "path_to_scm_registration_module"
+  count  = var.instance_count
+  # Additional configuration for scm_registration module
+}
+
+module "venafi" {
+  source      = "git::https://gitlab.us.bank-dns.com/USBCLOUDPLATFORM/aws/computing/tf_modules/module-venafi-cert.git/?ref=feature/CPEAWS-2362"
+  count       = var.instance_count
+  hostname    = module.scm_registration[count.index].scm_name
+  environment = var.environment
+  region      = var.region
+  account_id  = 147058048292 # data.aws_caller_identity.current.account_id
+  cert_sans   = "${module.scm_registration[count.index].scm_name}.nonprod.aws.prv"
+}
 
 
 
